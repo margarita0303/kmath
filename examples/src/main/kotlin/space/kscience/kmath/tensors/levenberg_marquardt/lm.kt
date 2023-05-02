@@ -1,6 +1,4 @@
 package space.kscience.kmath.tensors.levenberg_marquardt
-
-import space.kscience.kmath.ejml.EjmlLinearSpaceDDRM.solve
 import space.kscience.kmath.linear.transpose
 import space.kscience.kmath.nd.DoubleFieldOpsND.Companion.minus
 import space.kscience.kmath.nd.MutableStructure2D
@@ -9,6 +7,7 @@ import space.kscience.kmath.nd.as2D
 import space.kscience.kmath.nd4j.DoubleNd4jArrayFieldOps.Companion.times
 import space.kscience.kmath.nd4j.DoubleNd4jTensorAlgebra.max
 import space.kscience.kmath.real.max
+import space.kscience.kmath.tensors.core.BroadcastDoubleTensorAlgebra
 import space.kscience.kmath.tensors.core.BroadcastDoubleTensorAlgebra.div
 import space.kscience.kmath.tensors.core.BroadcastDoubleTensorAlgebra.dot
 import space.kscience.kmath.tensors.core.BroadcastDoubleTensorAlgebra.fromArray
@@ -16,26 +15,33 @@ import space.kscience.kmath.tensors.core.BroadcastDoubleTensorAlgebra.ones
 import space.kscience.kmath.tensors.core.BroadcastDoubleTensorAlgebra.variance
 import space.kscience.kmath.tensors.core.BroadcastDoubleTensorAlgebra.zeros
 import space.kscience.kmath.tensors.core.DoubleTensorAlgebra.Companion.copy
+import space.kscience.kmath.tensors.core.DoubleTensorAlgebra.Companion.map
 import space.kscience.kmath.tensors.core.DoubleTensorAlgebra.Companion.plus
+import space.kscience.kmath.tensors.core.DoubleTensorAlgebra.Companion.svd
 import space.kscience.kmath.tensors.core.DoubleTensorAlgebra.Companion.transpose
+import space.kscience.kmath.tensors.core.toDoubleTensor
 import kotlin.math.pow
 
-var iteration: Int = 0  // global variable
-var func_calls: Int = 0 // global variable
-var example_number = 3 // global variable
 
-val eps = 2.2204e-16    // matlab constant
+public fun solve(a: MutableStructure2D<Double>, b: MutableStructure2D<Double>): MutableStructure2D<Double> {
+    val svdA = a.svd()
+    val s = BroadcastDoubleTensorAlgebra.diagonalEmbedding(svdA.second.map { xi -> 1.0 / xi })
+    val inversedA = svdA.third.dot(s).dot(svdA.first.transpose())
+    val x = inversedA.dot(b).as2D()
+    return x
+}
 
 /* nargin = number of not empty parameters */
-fun lm(func: (MutableStructure2D<Double>,  MutableStructure2D<Double>) ->  MutableStructure2D<Double>,
+fun lm(func: (MutableStructure2D<Double>,  MutableStructure2D<Double>, LMSettings) ->  MutableStructure2D<Double>,
        p_input: MutableStructure2D<Double>, t_input: MutableStructure2D<Double>, y_dat_input: MutableStructure2D<Double>,
        weight_input: MutableStructure2D<Double>, dp_input: MutableStructure2D<Double>, p_min_input: MutableStructure2D<Double>, p_max_input: MutableStructure2D<Double>,
-       c_input: MutableStructure2D<Double>, opts_input: DoubleArray, nargin: Int) {
+       c_input: MutableStructure2D<Double>, opts_input: DoubleArray, nargin: Int, example_number: Int) {
 
     val tensor_parameter = 0
+    val eps:Double = 2.2204e-16
 
-    iteration  = 0 // iteration counter
-    func_calls = 0 // running count of function evaluations
+    var settings = LMSettings(0, 0, example_number)
+    settings.func_calls = 0 // running count of function evaluations
 
     var p = p_input
     val y_dat = y_dat_input
@@ -132,7 +138,7 @@ fun lm(func: (MutableStructure2D<Double>,  MutableStructure2D<Double>) ->  Mutab
     val idx = get_zero_indices(dp)                 // indices of the parameters to be fit
     val Nfit = idx?.shape?.component1()            // number of parameters to fit
     var stop = false                               // termination flag
-    val y_init = feval(func, t, p)                 // residual error using p_try
+    val y_init = feval(func, t, p, settings)                 // residual error using p_try
 
     if (weight.shape.component1() == 1 || weight.variance() == 0.0) { // identical weights vector
         weight = ones(intArrayOf(Npnt, 1)).div(1 / kotlin.math.abs(weight[0, 0])).as2D() // !!! need to check
@@ -144,7 +150,7 @@ fun lm(func: (MutableStructure2D<Double>,  MutableStructure2D<Double>) ->  Mutab
     }
 
     // initialize Jacobian with finite difference calculation
-    var lm_matx_ans = lm_matx(func, t, p_old, y_old,1, J, p, y_dat, weight, dp)
+    var lm_matx_ans = lm_matx(func, t, p_old, y_old,1, J, p, y_dat, weight, dp, settings)
     var JtWJ = lm_matx_ans[0]
     var JtWdy = lm_matx_ans[1]
     X2 = lm_matx_ans[2][0, 0]
@@ -174,19 +180,19 @@ fun lm(func: (MutableStructure2D<Double>,  MutableStructure2D<Double>) ->  Mutab
 
     var h = JtWJ.copy()
     var dX2 = X2
-    while (!stop && iteration <= MaxIter) {                   //--- Start Main Loop
-        iteration += 1
+    while (!stop && settings.iteration <= MaxIter) {                   //--- Start Main Loop
+        settings.iteration += 1
 
         // incremental change in parameters
         h = when (Update_Type) {
             1 -> {                // Marquardt
                 val solve = solve(JtWJ.plus(make_matrx_with_diagonal(diag(JtWJ)).div(1 / lambda)).as2D(), JtWdy)
-                solve.copy()
+                solve.toDoubleTensor()
             }
 
             else -> {             // Quadratic and Nielsen
                 val solve = solve(JtWJ.plus(lm_eye(Npar).div(1 / lambda)).as2D(), JtWdy)
-                solve.copy()
+                solve.toDoubleTensor()
             }
         }
 
@@ -197,7 +203,7 @@ fun lm(func: (MutableStructure2D<Double>,  MutableStructure2D<Double>) ->  Mutab
         var p_try = (p + h).as2D()  // update the [idx] elements
         p_try = smallest_element_comparison(largest_element_comparison(p_min, p_try.as2D()), p_max)  // apply constraints
 
-        var delta_y = y_dat.minus(feval(func, t, p_try))   // residual error using p_try
+        var delta_y = y_dat.minus(feval(func, t, p_try, settings))   // residual error using p_try
 
         // TODO
         //if ~all(isfinite(delta_y))                     // floating point error; break
@@ -205,7 +211,7 @@ fun lm(func: (MutableStructure2D<Double>,  MutableStructure2D<Double>) ->  Mutab
         //    break
         //end
 
-        func_calls += 1
+        settings.func_calls += 1
 
         val tmp = delta_y.times(weight)
         var X2_try = delta_y.as2D().transpose().dot(tmp)     // Chi-squared error criteria
@@ -248,7 +254,7 @@ fun lm(func: (MutableStructure2D<Double>,  MutableStructure2D<Double>) ->  Mutab
             y_old = y_hat.copy().as2D()
             p = make_column(p_try) // accept p_try
 
-            lm_matx_ans = lm_matx(func, t, p_old, y_old, dX2.toInt(), J, p, y_dat, weight, dp)
+            lm_matx_ans = lm_matx(func, t, p_old, y_old, dX2.toInt(), J, p, y_dat, weight, dp, settings)
             // decrease lambda ==> Gauss-Newton method
 
             JtWJ = lm_matx_ans[0]
@@ -276,8 +282,8 @@ fun lm(func: (MutableStructure2D<Double>,  MutableStructure2D<Double>) ->  Mutab
         }
         else { // it IS NOT better
             X2 = X2_old // do not accept p_try
-            if (iteration % (2 * Npar) == 0 ) { // rank-1 update of Jacobian
-                lm_matx_ans = lm_matx(func, t, p_old, y_old,-1, J, p, y_dat, weight, dp)
+            if (settings.iteration % (2 * Npar) == 0 ) { // rank-1 update of Jacobian
+                lm_matx_ans = lm_matx(func, t, p_old, y_old,-1, J, p, y_dat, weight, dp, settings)
                 JtWJ = lm_matx_ans[0]
                 JtWdy = lm_matx_ans[1]
                 dX2 = lm_matx_ans[2][0, 0]
@@ -303,7 +309,7 @@ fun lm(func: (MutableStructure2D<Double>,  MutableStructure2D<Double>) ->  Mutab
 
         if (prnt > 1) {
             val chi_sq = X2 / DoF
-            println("Iteration $iteration, func_calls $func_calls | chi_sq=$chi_sq | lambda=$lambda")
+            println("Iteration $settings.iteration, func_calls $settings.func_calls | chi_sq=$chi_sq | lambda=$lambda")
             print("param: ")
             for (pn in 0 until Npar) {
                 print(p[pn, 0].toString() + " ")
@@ -317,22 +323,22 @@ fun lm(func: (MutableStructure2D<Double>,  MutableStructure2D<Double>) ->  Mutab
         // update convergence history ... save _reduced_ Chi-square
         // cvg_hst(iteration,:) = [ func_calls  p'  X2/DoF lambda ];
 
-        if (abs(JtWdy).max()!! < epsilon_1 && iteration > 2) {
+        if (abs(JtWdy).max()!! < epsilon_1 && settings.iteration > 2) {
             println(" **** Convergence in r.h.s. (\"JtWdy\")  ****")
             println(" **** epsilon_1 = $epsilon_1")
             stop = true
         }
-        if ((abs(h.as2D()).div(abs(p) + 1e-12)).max() < epsilon_2  &&  iteration > 2) {
+        if ((abs(h.as2D()).div(abs(p) + 1e-12)).max() < epsilon_2  &&  settings.iteration > 2) {
             println(" **** Convergence in Parameters ****")
             println(" **** epsilon_2 = $epsilon_2")
             stop = true
         }
-        if (X2 / DoF < epsilon_3 && iteration > 2) {
+        if (X2 / DoF < epsilon_3 && settings.iteration > 2) {
             println(" **** Convergence in reduced Chi-square  **** ")
             println(" **** epsilon_3 = $epsilon_3")
             stop = true
         }
-        if (iteration == MaxIter) {
+        if (settings.iteration == MaxIter) {
             println(" !! Maximum Number of Iterations Reached Without Convergence !!")
             stop = true
         }
