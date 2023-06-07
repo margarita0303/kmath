@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 KMath contributors.
+ * Copyright 2018-2022 KMath contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 @file:OptIn(UnstableKMathAPI::class)
@@ -13,11 +13,11 @@ import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunctionGradient
 import org.apache.commons.math3.optim.nonlinear.scalar.gradient.NonLinearConjugateGradientOptimizer
 import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.NelderMeadSimplex
 import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.SimplexOptimizer
+import space.kscience.kmath.UnstableKMathAPI
 import space.kscience.kmath.expressions.Symbol
 import space.kscience.kmath.expressions.SymbolIndexer
 import space.kscience.kmath.expressions.derivative
 import space.kscience.kmath.expressions.withSymbols
-import space.kscience.kmath.misc.UnstableKMathAPI
 import space.kscience.kmath.misc.log
 import space.kscience.kmath.optimization.*
 import kotlin.collections.set

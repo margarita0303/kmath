@@ -1,13 +1,10 @@
 /*
- * Copyright 2018-2021 KMath contributors.
+ * Copyright 2018-2022 KMath contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
 package space.kscience.kmath.benchmarks
 
-import kotlinx.serialization.Serializable
-
-@Serializable
 data class JmhReport(
     val jmhVersion: String,
     val benchmark: String,
@@ -37,7 +34,6 @@ data class JmhReport(
         val scoreUnit: String
     }
 
-    @Serializable
     data class PrimaryMetric(
         override val score: Double,
         override val scoreError: Double,
@@ -48,7 +44,6 @@ data class JmhReport(
         val rawData: List<List<Double>>? = null,
     ) : Metric
 
-    @Serializable
     data class SecondaryMetric(
         override val score: Double,
         override val scoreError: Double,

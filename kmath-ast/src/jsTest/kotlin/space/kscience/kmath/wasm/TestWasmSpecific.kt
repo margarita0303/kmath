@@ -1,10 +1,11 @@
 /*
- * Copyright 2018-2021 KMath contributors.
+ * Copyright 2018-2022 KMath contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
 package space.kscience.kmath.wasm
 
+import space.kscience.kmath.UnstableKMathAPI
 import space.kscience.kmath.expressions.MstExtendedField
 import space.kscience.kmath.expressions.MstRing
 import space.kscience.kmath.expressions.invoke
@@ -15,6 +16,7 @@ import space.kscience.kmath.operations.invoke
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
+@OptIn(UnstableKMathAPI::class)
 internal class TestWasmSpecific {
     @Test
     fun int() {

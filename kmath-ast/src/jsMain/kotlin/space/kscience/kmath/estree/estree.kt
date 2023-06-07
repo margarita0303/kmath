@@ -1,10 +1,11 @@
 /*
- * Copyright 2018-2021 KMath contributors.
+ * Copyright 2018-2022 KMath contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
 package space.kscience.kmath.estree
 
+import space.kscience.kmath.UnstableKMathAPI
 import space.kscience.kmath.ast.TypedMst
 import space.kscience.kmath.ast.evaluateConstants
 import space.kscience.kmath.estree.internal.ESTreeBuilder
@@ -13,7 +14,6 @@ import space.kscience.kmath.expressions.MST
 import space.kscience.kmath.expressions.Symbol
 import space.kscience.kmath.expressions.invoke
 import space.kscience.kmath.internal.estree.BaseExpression
-import space.kscience.kmath.misc.UnstableKMathAPI
 import space.kscience.kmath.operations.Algebra
 
 /**
@@ -36,7 +36,7 @@ public fun <T : Any> MST.compileToExpression(algebra: Algebra<T>): Expression<T>
         )
     }
 
-    return ESTreeBuilder<T> { visit(typed) }.instance
+    return ESTreeBuilder { visit(typed) }.instance
 }
 
 /**

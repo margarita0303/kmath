@@ -1,20 +1,22 @@
 plugins {
-    id("ru.mipt.npm.gradle.mpp")
-    id("ru.mipt.npm.gradle.native")
+    id("space.kscience.gradle.mpp")
 }
 
-kscience {
-    useAtomic()
+kscience{
+    jvm()
+    js()
+    native()
 }
 
 kotlin.sourceSets {
     commonMain {
         dependencies {
-            api(project(":kmath-coroutines"))
+            api(projects.kmathCoroutines)
+            //implementation(spclibs.atomicfu)
         }
     }
 
-    jvmMain {
+    getByName("jvmMain") {
         dependencies {
             api("org.apache.commons:commons-rng-sampling:1.3")
             api("org.apache.commons:commons-rng-simple:1.3")
@@ -23,5 +25,5 @@ kotlin.sourceSets {
 }
 
 readme {
-    maturity = ru.mipt.npm.gradle.Maturity.EXPERIMENTAL
+    maturity = space.kscience.gradle.Maturity.EXPERIMENTAL
 }

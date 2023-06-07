@@ -1,8 +1,8 @@
 [![JetBrains Research](https://jb.gg/badges/research.svg)](https://confluence.jetbrains.com/display/ALL/JetBrains+on+GitHub)
 [![DOI](https://zenodo.org/badge/129486382.svg)](https://zenodo.org/badge/latestdoi/129486382)
-![Gradle build](https://github.com/mipt-npm/kmath/workflows/Gradle%20build/badge.svg)
+![Gradle build](https://github.com/SciProgCentre/kmath/workflows/Gradle%20build/badge.svg)
 [![Maven Central](https://img.shields.io/maven-central/v/space.kscience/kmath-core.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:%22space.kscience%22)
-[![Space](https://img.shields.io/badge/dynamic/xml?color=orange&label=Space&query=//metadata/versioning/latest&url=https%3A%2F%2Fmaven.pkg.jetbrains.space%2Fmipt-npm%2Fp%2Fsci%2Fmaven%2Fspace%2Fkscience%2Fkmath-core%2Fmaven-metadata.xml)](https://maven.pkg.jetbrains.space/mipt-npm/p/sci/maven/space/kscience/)
+[![Space](https://img.shields.io/badge/dynamic/xml?color=orange&label=Space&query=//metadata/versioning/latest&url=https%3A%2F%2Fmaven.pkg.jetbrains.space%2Fmipt-npm%2Fp%2Fsci%2Fmaven%2Fspace%2Fkscience%2Fkmath-core%2Fmaven-metadata.xml)](https://maven.pkg.jetbrains.space/spc/p/sci/maven/space/kscience/)
 
 # KMath
 
@@ -11,7 +11,7 @@ analog to Python's NumPy library. Later we found that kotlin is much more flexib
 architecture designs. In contrast to `numpy` and `scipy` it is modular and has a lightweight core. The `numpy`-like
 experience could be achieved with [kmath-for-real](/kmath-for-real) extension module.
 
-[Documentation site (**WIP**)](https://mipt-npm.github.io/kmath/)
+[Documentation site (**WIP**)](https://SciProgCentre.github.io/kmath/)
 
 ## Publications and talks
 
@@ -44,7 +44,7 @@ module definitions below. The module stability could have the following levels:
 * **PROTOTYPE**. On this level there are no compatibility guarantees. All methods and classes form those modules could
   break any moment. You can still use it, but be sure to fix the specific version.
 * **EXPERIMENTAL**. The general API is decided, but some changes could be made. Volatile API is marked
-  with `@UnstableKmathAPI` or other stability warning annotations.
+  with `@UnstableKMathAPI` or other stability warning annotations.
 * **DEVELOPMENT**. API breaking generally follows semantic versioning ideology. There could be changes in minor
   versions, but not in patch versions. API is protected
   with [binary-compatibility-validator](https://github.com/Kotlin/binary-compatibility-validator) tool.
@@ -86,8 +86,8 @@ module definitions below. The module stability could have the following levels:
 > **Maturity**: PROTOTYPE
 >
 > **Features:**
-> - [complex](kmath-complex/src/commonMain/kotlin/space/kscience/kmath/complex/Complex.kt) : Complex Numbers
-> - [quaternion](kmath-complex/src/commonMain/kotlin/space/kscience/kmath/complex/Quaternion.kt) : Quaternions
+> - [complex](kmath-complex/src/commonMain/kotlin/space/kscience/kmath/complex/Complex.kt) : Complex numbers operations
+> - [quaternion](kmath-complex/src/commonMain/kotlin/space/kscience/kmath/complex/Quaternion.kt) : Quaternions and their composition
 
 
 ### [kmath-core](kmath-core)
@@ -245,6 +245,11 @@ One can still use generic algebras though.
 >
 > **Maturity**: DEVELOPMENT
 
+### [test-utils](test-utils)
+> 
+>
+> **Maturity**: EXPERIMENTAL
+
 
 ## Multi-platform support
 
@@ -261,8 +266,7 @@ performance and flexibility.
 
 We expect to focus on creating convenient universal API first and then work on increasing performance for specific
 cases. We expect the worst KMath benchmarks will perform better than native Python, but worse than optimized
-native/SciPy (mostly due to boxing operations on primitive numbers). The best performance of optimized parts could be
-better than SciPy.
+native/SciPy (mostly due to boxing operations on primitive numbers). The best performance of optimized parts could be better than SciPy.
 
 ## Requirements
 
@@ -293,5 +297,4 @@ Gradle `6.0+` is required for multiplatform artifacts.
 
 The project requires a lot of additional work. The most important thing we need is a feedback about what features are
 required the most. Feel free to create feature requests. We are also welcome to code contributions, especially in issues
-marked with
-[waiting for a hero](https://github.com/mipt-npm/kmath/labels/waiting%20for%20a%20hero) label.
+marked with [waiting for a hero](https://github.com/SciProgCentre/kmath/labels/waiting%20for%20a%20hero) label.

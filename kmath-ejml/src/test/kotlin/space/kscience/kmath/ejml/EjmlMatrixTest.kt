@@ -1,7 +1,9 @@
 /*
- * Copyright 2018-2021 KMath contributors.
+ * Copyright 2018-2022 KMath contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
+
+@file:OptIn(PerformancePitfall::class)
 
 package space.kscience.kmath.ejml
 
@@ -9,20 +11,21 @@ import org.ejml.data.DMatrixRMaj
 import org.ejml.dense.row.CommonOps_DDRM
 import org.ejml.dense.row.RandomMatrices_DDRM
 import org.ejml.dense.row.factory.DecompositionFactory_DDRM
+import space.kscience.kmath.PerformancePitfall
+import space.kscience.kmath.UnstableKMathAPI
 import space.kscience.kmath.linear.*
-import space.kscience.kmath.misc.PerformancePitfall
-import space.kscience.kmath.misc.UnstableKMathAPI
 import space.kscience.kmath.nd.StructureND
+import space.kscience.kmath.nd.toArray
 import space.kscience.kmath.operations.algebra
 import kotlin.random.Random
 import kotlin.random.asJavaRandom
 import kotlin.test.*
 
-@OptIn(PerformancePitfall::class)
-fun <T : Any> assertMatrixEquals(expected: StructureND<T>, actual: StructureND<T>) {
+internal fun <T : Any> assertMatrixEquals(expected: StructureND<T>, actual: StructureND<T>) {
     assertTrue { StructureND.contentEquals(expected, actual) }
 }
 
+@OptIn(UnstableKMathAPI::class)
 internal class EjmlMatrixTest {
     private val random = Random(0)
 
@@ -50,7 +53,7 @@ internal class EjmlMatrixTest {
     fun shape() {
         val m = randomMatrix
         val w = EjmlDoubleMatrix(m)
-        assertContentEquals(intArrayOf(m.numRows, m.numCols), w.shape)
+        assertContentEquals(intArrayOf(m.numRows, m.numCols), w.shape.toArray())
     }
 
     @OptIn(UnstableKMathAPI::class)

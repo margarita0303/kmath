@@ -1,15 +1,15 @@
 /*
- * Copyright 2018-2021 KMath contributors.
+ * Copyright 2018-2022 KMath contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
 package space.kscience.kmath.tensors
 
+import space.kscience.kmath.nd.ShapeND
+import space.kscience.kmath.nd.contentEquals
+import space.kscience.kmath.operations.asIterable
 import space.kscience.kmath.operations.invoke
-import space.kscience.kmath.tensors.core.BroadcastDoubleTensorAlgebra
-import space.kscience.kmath.tensors.core.DoubleTensor
-import space.kscience.kmath.tensors.core.DoubleTensorAlgebra
-import space.kscience.kmath.tensors.core.copyArray
+import space.kscience.kmath.tensors.core.*
 import kotlin.math.sqrt
 
 const val seed = 100500L
@@ -48,7 +48,7 @@ fun reluDer(x: DoubleTensor): DoubleTensor = DoubleTensorAlgebra {
 class ReLU : Activation(::relu, ::reluDer)
 
 fun sigmoid(x: DoubleTensor): DoubleTensor = DoubleTensorAlgebra {
-    1.0 / (1.0 + (-x).exp())
+    1.0 / (1.0 + exp((-x)))
 }
 
 fun sigmoidDer(x: DoubleTensor): DoubleTensor = DoubleTensorAlgebra {
@@ -67,22 +67,22 @@ class Dense(
 
     private val weights: DoubleTensor = DoubleTensorAlgebra {
         randomNormal(
-            intArrayOf(inputUnits, outputUnits),
+            ShapeND(inputUnits, outputUnits),
             seed
         ) * sqrt(2.0 / (inputUnits + outputUnits))
     }
 
-    private val bias: DoubleTensor = DoubleTensorAlgebra { zeros(intArrayOf(outputUnits)) }
+    private val bias: DoubleTensor = DoubleTensorAlgebra { zeros(ShapeND(outputUnits)) }
 
     override fun forward(input: DoubleTensor): DoubleTensor = BroadcastDoubleTensorAlgebra {
         (input dot weights) + bias
     }
 
     override fun backward(input: DoubleTensor, outputError: DoubleTensor): DoubleTensor = DoubleTensorAlgebra {
-        val gradInput = outputError dot weights.transpose()
+        val gradInput = outputError dot weights.transposed()
 
-        val gradW = input.transpose() dot outputError
-        val gradBias = outputError.mean(dim = 0, keepDim = false) * input.shape[0].toDouble()
+        val gradW = input.transposed() dot outputError
+        val gradBias = mean(structureND = outputError, dim = 0, keepDim = false) * input.shape[0].toDouble()
 
         weights -= learningRate * gradW
         bias -= learningRate * gradBias
@@ -106,17 +106,16 @@ fun accuracy(yPred: DoubleTensor, yTrue: DoubleTensor): Double {
 }
 
 // neural network class
-@OptIn(ExperimentalStdlibApi::class)
 class NeuralNetwork(private val layers: List<Layer>) {
     private fun softMaxLoss(yPred: DoubleTensor, yTrue: DoubleTensor): DoubleTensor = BroadcastDoubleTensorAlgebra {
 
-        val onesForAnswers = yPred.zeroesLike()
-        yTrue.copyArray().forEachIndexed { index, labelDouble ->
+        val onesForAnswers = zeroesLike(yPred)
+        yTrue.source.asIterable().forEachIndexed { index, labelDouble ->
             val label = labelDouble.toInt()
             onesForAnswers[intArrayOf(index, label)] = 1.0
         }
 
-        val softmaxValue = yPred.exp() / yPred.exp().sum(dim = 1, keepDim = true)
+        val softmaxValue = exp(yPred) / exp(yPred).sum(dim = 1, keepDim = true)
 
         (-onesForAnswers + softmaxValue) / (yPred.shape[0].toDouble())
     }
@@ -163,7 +162,7 @@ class NeuralNetwork(private val layers: List<Layer>) {
             for ((xBatch, yBatch) in iterBatch(xTrain, yTrain)) {
                 train(xBatch, yBatch)
             }
-            println("Accuracy:${accuracy(yTrain, predict(xTrain).argMax(1, true).asDouble())}")
+            println("Accuracy:${accuracy(yTrain, predict(xTrain).argMax(1, true).toDoubleTensor())}")
         }
     }
 
@@ -174,7 +173,6 @@ class NeuralNetwork(private val layers: List<Layer>) {
 }
 
 
-@OptIn(ExperimentalStdlibApi::class)
 fun main() = BroadcastDoubleTensorAlgebra {
     val features = 5
     val sampleSize = 250
@@ -182,19 +180,19 @@ fun main() = BroadcastDoubleTensorAlgebra {
     //val testSize = sampleSize - trainSize
 
     // take sample of features from normal distribution
-    val x = randomNormal(intArrayOf(sampleSize, features), seed) * 2.5
+    val x = randomNormal(ShapeND(sampleSize, features), seed) * 2.5
 
     x += fromArray(
-        intArrayOf(5),
+        ShapeND(5),
         doubleArrayOf(0.0, -1.0, -2.5, -3.0, 5.5) // row means
     )
 
 
     // define class like '1' if the sum of features > 0 and '0' otherwise
     val y = fromArray(
-        intArrayOf(sampleSize, 1),
+        ShapeND(sampleSize, 1),
         DoubleArray(sampleSize) { i ->
-            if (x[i].sum() > 0.0) {
+            if (x.getTensor(i).sum() > 0.0) {
                 1.0
             } else {
                 0.0
@@ -230,7 +228,7 @@ fun main() = BroadcastDoubleTensorAlgebra {
     val prediction = model.predict(xTest)
 
     // process raw prediction via argMax
-    val predictionLabels = prediction.argMax(1, true).asDouble()
+    val predictionLabels = prediction.argMax(1, true).toDoubleTensor()
 
     // find out accuracy
     val acc = accuracy(yTest, predictionLabels)

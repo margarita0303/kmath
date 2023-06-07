@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 KMath contributors.
+ * Copyright 2018-2022 KMath contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
@@ -14,7 +14,7 @@ import kotlin.jvm.JvmInline
  * @author Iaroslav Postovalov
  */
 @JvmInline
-public value class FloatBuffer(public val array: FloatArray) : MutableBuffer<Float> {
+public value class FloatBuffer(public val array: FloatArray) : PrimitiveBuffer<Float> {
     override val size: Int get() = array.size
 
     override operator fun get(index: Int): Float = array[index]

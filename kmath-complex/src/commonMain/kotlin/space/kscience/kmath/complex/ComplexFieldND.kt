@@ -1,11 +1,12 @@
 /*
- * Copyright 2018-2021 KMath contributors.
+ * Copyright 2018-2022 KMath contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
 package space.kscience.kmath.complex
 
-import space.kscience.kmath.misc.UnstableKMathAPI
+import space.kscience.kmath.PerformancePitfall
+import space.kscience.kmath.UnstableKMathAPI
 import space.kscience.kmath.nd.*
 import space.kscience.kmath.operations.*
 import space.kscience.kmath.structures.Buffer
@@ -20,6 +21,7 @@ import kotlin.contracts.contract
 public sealed class ComplexFieldOpsND : BufferedFieldOpsND<Complex, ComplexField>(ComplexField.bufferAlgebra),
     ScaleOperations<StructureND<Complex>>, ExtendedFieldOps<StructureND<Complex>>, PowerOperations<StructureND<Complex>> {
 
+    @OptIn(PerformancePitfall::class)
     override fun StructureND<Complex>.toBufferND(): BufferND<Complex> = when (this) {
         is BufferND -> this
         else -> {
@@ -56,13 +58,8 @@ public sealed class ComplexFieldOpsND : BufferedFieldOpsND<Complex, ComplexField
     public companion object : ComplexFieldOpsND()
 }
 
-@UnstableKMathAPI
-public val ComplexField.bufferAlgebra: BufferFieldOps<Complex, ComplexField>
-    get() = bufferAlgebra(Buffer.Companion::complex)
-
-
 @OptIn(UnstableKMathAPI::class)
-public class ComplexFieldND(override val shape: Shape) :
+public class ComplexFieldND(override val shape: ShapeND) :
     ComplexFieldOpsND(), FieldND<Complex, ComplexField>,
     NumbersAddOps<StructureND<Complex>> {
 
@@ -74,12 +71,12 @@ public class ComplexFieldND(override val shape: Shape) :
 
 public val ComplexField.ndAlgebra: ComplexFieldOpsND get() = ComplexFieldOpsND
 
-public fun ComplexField.ndAlgebra(vararg shape: Int): ComplexFieldND = ComplexFieldND(shape)
+public fun ComplexField.ndAlgebra(vararg shape: Int): ComplexFieldND = ComplexFieldND(ShapeND(shape))
 
 /**
  * Produce a context for n-dimensional operations inside this real field
  */
 public inline fun <R> ComplexField.withNdAlgebra(vararg shape: Int, action: ComplexFieldND.() -> R): R {
     contract { callsInPlace(action, InvocationKind.EXACTLY_ONCE) }
-    return ComplexFieldND(shape).action()
+    return ComplexFieldND(ShapeND(shape)).action()
 }

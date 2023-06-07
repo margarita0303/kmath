@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 KMath contributors.
+ * Copyright 2018-2022 KMath contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
@@ -45,21 +45,23 @@ public class Mean<T>(
     public companion object {
         @Deprecated("Use Double.mean instead")
         public val double: Mean<Double> = Mean(DoubleField) { sum, count -> sum / count }
+
         @Deprecated("Use Int.mean instead")
         public val int: Mean<Int> = Mean(IntRing) { sum, count -> sum / count }
+
         @Deprecated("Use Long.mean instead")
         public val long: Mean<Long> = Mean(LongRing) { sum, count -> sum / count }
 
-        public fun evaluate(buffer: Buffer<Double>): Double = Double.mean.evaluateBlocking(buffer)
-        public fun evaluate(buffer: Buffer<Int>): Int = Int.mean.evaluateBlocking(buffer)
-        public fun evaluate(buffer: Buffer<Long>): Long = Long.mean.evaluateBlocking(buffer)
+        public fun evaluate(buffer: Buffer<Double>): Double = DoubleField.mean.evaluateBlocking(buffer)
+        public fun evaluate(buffer: Buffer<Int>): Int = IntRing.mean.evaluateBlocking(buffer)
+        public fun evaluate(buffer: Buffer<Long>): Long = LongRing.mean.evaluateBlocking(buffer)
     }
 }
 
 
 //TODO replace with optimized version which respects overflow
-public val Double.Companion.mean: Mean<Double> get() = Mean(DoubleField) { sum, count -> sum / count }
-public val Int.Companion.mean: Mean<Int> get() = Mean(IntRing) { sum, count -> sum / count }
-public val Long.Companion.mean: Mean<Long> get() =  Mean(LongRing) { sum, count -> sum / count }
+public val DoubleField.mean: Mean<Double> get() = Mean(DoubleField) { sum, count -> sum / count }
+public val IntRing.mean: Mean<Int> get() = Mean(IntRing) { sum, count -> sum / count }
+public val LongRing.mean: Mean<Long> get() = Mean(LongRing) { sum, count -> sum / count }
 
 

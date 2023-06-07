@@ -1,3 +1,8 @@
+/*
+ * Copyright 2018-2022 KMath contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
 package space.kscience.kmath.tensorflow
 
 
@@ -12,10 +17,13 @@ import org.tensorflow.op.core.*
 import org.tensorflow.types.TInt32
 import org.tensorflow.types.family.TNumber
 import org.tensorflow.types.family.TType
-import space.kscience.kmath.misc.PerformancePitfall
-import space.kscience.kmath.misc.UnstableKMathAPI
-import space.kscience.kmath.nd.Shape
+import space.kscience.kmath.PerformancePitfall
+import space.kscience.kmath.UnsafeKMathAPI
+import space.kscience.kmath.UnstableKMathAPI
+import space.kscience.kmath.nd.ShapeND
 import space.kscience.kmath.nd.StructureND
+import space.kscience.kmath.nd.asArray
+import space.kscience.kmath.nd.contentEquals
 import space.kscience.kmath.operations.Ring
 import space.kscience.kmath.tensors.api.Tensor
 import space.kscience.kmath.tensors.api.TensorAlgebra
@@ -33,12 +41,14 @@ public sealed interface TensorFlowTensor<T> : Tensor<T>
  */
 @JvmInline
 public value class TensorFlowArray<T>(public val tensor: NdArray<T>) : Tensor<T> {
-    override val shape: Shape get() = tensor.shape().asArray().toIntArray()
+    override val shape: ShapeND get() = ShapeND(tensor.shape().asArray().toIntArray())
 
+    @PerformancePitfall
     override fun get(index: IntArray): T = tensor.getObject(*index.toLongArray())
 
     //TODO implement native element sequence
 
+    @PerformancePitfall
     override fun set(index: IntArray, value: T) {
         tensor.setObject(value, *index.toLongArray())
     }
@@ -57,7 +67,7 @@ public abstract class TensorFlowOutput<T, TT : TType>(
     public var output: Output<TT> = output
         internal set
 
-    override val shape: Shape get() = output.shape().asArray().toIntArray()
+    override val shape: ShapeND get() = ShapeND(output.shape().asArray().toIntArray())
 
     protected abstract fun org.tensorflow.Tensor.actualizeTensor(): NdArray<T>
 
@@ -67,11 +77,13 @@ public abstract class TensorFlowOutput<T, TT : TType>(
         }
     }
 
+    @PerformancePitfall
     override fun get(index: IntArray): T = actualTensor[index]
 
     @PerformancePitfall
     override fun elements(): Sequence<Pair<IntArray, T>> = actualTensor.elements()
 
+    @PerformancePitfall
     override fun set(index: IntArray, value: T) {
         actualTensor[index] = value
     }
@@ -91,8 +103,9 @@ public abstract class TensorFlowAlgebra<T, TT : TNumber, A : Ring<T>> internal c
 
     protected abstract fun const(value: T): Constant<TT>
 
-    override fun StructureND<T>.valueOrNull(): T? = if (shape contentEquals intArrayOf(1))
-        get(Shape(0)) else null
+    @OptIn(PerformancePitfall::class)
+    override fun StructureND<T>.valueOrNull(): T? = if (shape contentEquals ShapeND(1))
+        get(intArrayOf(0)) else null
 
     /**
      * Perform binary lazy operation on tensor. Both arguments are implicitly converted
@@ -179,16 +192,17 @@ public abstract class TensorFlowAlgebra<T, TT : TNumber, A : Ring<T>> internal c
 
     override fun StructureND<T>.unaryMinus(): TensorFlowOutput<T, TT> = operate(ops.math::neg)
 
-    override fun Tensor<T>.get(i: Int): Tensor<T> = operate {
+    override fun Tensor<T>.getTensor(i: Int): Tensor<T> = operate {
         StridedSliceHelper.stridedSlice(ops.scope(), it, Indices.at(i.toLong()))
     }
 
-    override fun Tensor<T>.transpose(i: Int, j: Int): Tensor<T> = operate {
+    override fun StructureND<T>.transposed(i: Int, j: Int): Tensor<T> = operate {
         ops.linalg.transpose(it, ops.constant(intArrayOf(i, j)))
     }
 
-    override fun Tensor<T>.view(shape: IntArray): Tensor<T> = operate {
-        ops.reshape(it, ops.constant(shape))
+    override fun Tensor<T>.view(shape: ShapeND): Tensor<T> = operate {
+        @OptIn(UnsafeKMathAPI::class)
+        ops.reshape(it, ops.constant(shape.asArray()))
     }
 
     override fun Tensor<T>.viewAs(other: StructureND<T>): Tensor<T> = operate(other) { l, r ->
@@ -203,7 +217,7 @@ public abstract class TensorFlowAlgebra<T, TT : TNumber, A : Ring<T>> internal c
     }
 
     override fun diagonalEmbedding(
-        diagonalEntries: Tensor<T>,
+        diagonalEntries: StructureND<T>,
         offset: Int,
         dim1: Int,
         dim2: Int,
@@ -232,6 +246,11 @@ public abstract class TensorFlowAlgebra<T, TT : TNumber, A : Ring<T>> internal c
     override fun StructureND<T>.min(dim: Int, keepDim: Boolean): Tensor<T> = operate {
         ops.min(it, ops.constant(dim), Min.keepDims(keepDim))
     }
+
+    override fun StructureND<T>.argMin(dim: Int, keepDim: Boolean): Tensor<Int> = IntTensorFlowOutput(
+        graph,
+        ops.math.argMin(asTensorFlow().output, ops.constant(dim), TInt32::class.java).output()
+    ).actualTensor
 
     override fun StructureND<T>.max(): T = operate {
         ops.max(it, ops.constant(intArrayOf()))

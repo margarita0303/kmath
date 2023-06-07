@@ -19,9 +19,9 @@ import org.ejml.sparse.csc.factory.DecompositionFactory_DSCC
 import org.ejml.sparse.csc.factory.DecompositionFactory_FSCC
 import org.ejml.sparse.csc.factory.LinearSolverFactory_DSCC
 import org.ejml.sparse.csc.factory.LinearSolverFactory_FSCC
+import space.kscience.kmath.UnstableKMathAPI
 import space.kscience.kmath.linear.*
 import space.kscience.kmath.linear.Matrix
-import space.kscience.kmath.misc.UnstableKMathAPI
 import space.kscience.kmath.nd.StructureFeature
 import space.kscience.kmath.operations.DoubleField
 import space.kscience.kmath.operations.FloatField
@@ -271,7 +271,9 @@ public object EjmlLinearSpaceDDRM : EjmlLinearSpace<Double, DoubleField, DMatrix
             }
 
             else -> null
-        }?.let(type::cast)
+        }?.let{
+            type.cast(it)
+        }
     }
 
     /**
@@ -505,7 +507,9 @@ public object EjmlLinearSpaceFDRM : EjmlLinearSpace<Float, FloatField, FMatrixRM
             }
 
             else -> null
-        }?.let(type::cast)
+        }?.let{
+            type.cast(it)
+        }
     }
 
     /**
@@ -734,7 +738,9 @@ public object EjmlLinearSpaceDSCC : EjmlLinearSpace<Double, DoubleField, DMatrix
             }
 
             else -> null
-        }?.let(type::cast)
+        }?.let{
+            type.cast(it)
+        }
     }
 
     /**
@@ -963,7 +969,9 @@ public object EjmlLinearSpaceFSCC : EjmlLinearSpace<Float, FloatField, FMatrixSp
             }
 
             else -> null
-        }?.let(type::cast)
+        }?.let{
+            type.cast(it)
+        }
     }
 
     /**

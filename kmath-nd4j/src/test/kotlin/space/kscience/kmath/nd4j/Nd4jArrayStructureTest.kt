@@ -1,12 +1,13 @@
 /*
- * Copyright 2018-2021 KMath contributors.
+ * Copyright 2018-2022 KMath contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
 package space.kscience.kmath.nd4j
 
 import org.nd4j.linalg.factory.Nd4j
-import space.kscience.kmath.misc.PerformancePitfall
+import space.kscience.kmath.PerformancePitfall
+import space.kscience.kmath.nd.asList
 import space.kscience.kmath.nd.get
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -27,7 +28,7 @@ internal class Nd4jArrayStructureTest {
     fun testShape() {
         val nd = Nd4j.rand(10, 2, 3, 6) ?: fail()
         val struct = nd.asDoubleStructure()
-        assertEquals(intArrayOf(10, 2, 3, 6).toList(), struct.shape.toList())
+        assertEquals(intArrayOf(10, 2, 3, 6).toList(), struct.shape.asList())
     }
 
     @Test

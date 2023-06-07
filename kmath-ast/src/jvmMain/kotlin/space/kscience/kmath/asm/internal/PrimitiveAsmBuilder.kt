@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 KMath contributors.
+ * Copyright 2018-2022 KMath contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
@@ -11,9 +11,9 @@ import org.objectweb.asm.Opcodes.*
 import org.objectweb.asm.Type
 import org.objectweb.asm.Type.*
 import org.objectweb.asm.commons.InstructionAdapter
+import space.kscience.kmath.UnstableKMathAPI
 import space.kscience.kmath.ast.TypedMst
 import space.kscience.kmath.expressions.*
-import space.kscience.kmath.misc.UnstableKMathAPI
 import space.kscience.kmath.operations.*
 import java.lang.invoke.MethodHandles
 import java.lang.invoke.MethodType

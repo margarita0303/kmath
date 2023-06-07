@@ -1,34 +1,40 @@
 plugins {
-    kotlin("multiplatform")
-    id("ru.mipt.npm.gradle.common")
-    id("ru.mipt.npm.gradle.native")
-//    id("com.xcporter.metaview") version "0.0.5"
+    id("space.kscience.gradle.mpp")
 }
 
-kotlin.sourceSets {
-    filter { it.name.contains("test", true) }
-        .map(org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet::languageSettings)
-        .forEach {
-            it.optIn("space.kscience.kmath.misc.PerformancePitfall")
-            it.optIn("space.kscience.kmath.misc.UnstableKMathAPI")
+kscience{
+    jvm()
+    js()
+    native()
+    wasm{
+        browser {
+            testTask {
+                useKarma {
+                    webpackConfig.experiments.add("topLevelAwait")
+                    useChromeHeadless()
+                }
+            }
         }
+    }
 
-    commonMain {
+    wasmTest{
         dependencies {
-            api(project(":kmath-memory"))
+            implementation(kotlin("test"))
         }
+    }
+
+    dependencies {
+        api(projects.kmathMemory)
+    }
+
+    testDependencies {
+        implementation(projects.testUtils)
     }
 }
 
-//generateUml {
-//    classTree {
-//
-//    }
-//}
-
 readme {
     description = "Core classes, algebra definitions, basic linear algebra"
-    maturity = ru.mipt.npm.gradle.Maturity.DEVELOPMENT
+    maturity = space.kscience.gradle.Maturity.DEVELOPMENT
     propertyByTemplate("artifact", rootProject.file("docs/templates/ARTIFACT-TEMPLATE.md"))
 
     feature(

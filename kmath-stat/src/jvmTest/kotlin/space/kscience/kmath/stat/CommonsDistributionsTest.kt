@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 KMath contributors.
+ * Copyright 2018-2022 KMath contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
@@ -8,6 +8,7 @@ package space.kscience.kmath.stat
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
+import space.kscience.kmath.random.RandomGenerator
 import space.kscience.kmath.samplers.GaussianSampler
 
 internal class CommonsDistributionsTest {

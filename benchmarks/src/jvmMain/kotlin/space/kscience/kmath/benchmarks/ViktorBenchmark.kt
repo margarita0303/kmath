@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 KMath contributors.
+ * Copyright 2018-2022 KMath contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
@@ -10,25 +10,19 @@ import kotlinx.benchmark.Blackhole
 import kotlinx.benchmark.Scope
 import kotlinx.benchmark.State
 import org.jetbrains.bio.viktor.F64Array
-import space.kscience.kmath.nd.*
+import space.kscience.kmath.nd.ShapeND
+import space.kscience.kmath.nd.StructureND
+import space.kscience.kmath.nd.ndAlgebra
+import space.kscience.kmath.nd.one
 import space.kscience.kmath.operations.DoubleField
-import space.kscience.kmath.structures.Buffer
 import space.kscience.kmath.viktor.ViktorFieldND
 
 @State(Scope.Benchmark)
 internal class ViktorBenchmark {
-    @Benchmark
-    fun automaticFieldAddition(blackhole: Blackhole) {
-        with(autoField) {
-            var res: StructureND<Double> = one(shape)
-            repeat(n) { res += 1.0 }
-            blackhole.consume(res)
-        }
-    }
 
     @Benchmark
-    fun realFieldAddition(blackhole: Blackhole) {
-        with(realField) {
+    fun doubleFieldAddition(blackhole: Blackhole) {
+        with(doubleField) {
             var res: StructureND<Double> = one(shape)
             repeat(n) { res += 1.0 }
             blackhole.consume(res)
@@ -55,11 +49,10 @@ internal class ViktorBenchmark {
     private companion object {
         private const val dim = 1000
         private const val n = 100
-        private val shape = Shape(dim, dim)
+        private val shape = ShapeND(dim, dim)
 
         // automatically build context most suited for given type.
-        private val autoField = BufferedFieldOpsND(DoubleField, Buffer.Companion::auto)
-        private val realField = DoubleField.ndAlgebra
+        private val doubleField = DoubleField.ndAlgebra
         private val viktorField = ViktorFieldND(dim, dim)
     }
 }

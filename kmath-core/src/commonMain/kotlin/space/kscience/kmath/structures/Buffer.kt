@@ -1,10 +1,11 @@
 /*
- * Copyright 2018-2021 KMath contributors.
+ * Copyright 2018-2022 KMath contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
 package space.kscience.kmath.structures
 
+import space.kscience.kmath.operations.WithSize
 import space.kscience.kmath.operations.asSequence
 import kotlin.jvm.JvmInline
 import kotlin.reflect.KClass
@@ -14,14 +15,34 @@ import kotlin.reflect.KClass
  *
  * @param T the type of buffer.
  */
-public typealias BufferFactory<T> = (Int, (Int) -> T) -> Buffer<T>
+public fun interface BufferFactory<T> {
+    public operator fun invoke(size: Int, builder: (Int) -> T): Buffer<T>
+
+    public companion object{
+        public inline fun <reified T : Any> auto(): BufferFactory<T> =
+            BufferFactory(Buffer.Companion::auto)
+
+        public fun <T> boxing(): BufferFactory<T> =
+            BufferFactory(Buffer.Companion::boxing)
+    }
+}
 
 /**
  * Function that produces [MutableBuffer] from its size and function that supplies values.
  *
  * @param T the type of buffer.
  */
-public typealias MutableBufferFactory<T> = (Int, (Int) -> T) -> MutableBuffer<T>
+public fun interface MutableBufferFactory<T> : BufferFactory<T> {
+    override fun invoke(size: Int, builder: (Int) -> T): MutableBuffer<T>
+
+    public companion object {
+        public inline fun <reified T : Any> auto(): MutableBufferFactory<T> =
+            MutableBufferFactory(MutableBuffer.Companion::auto)
+
+        public fun <T> boxing(): MutableBufferFactory<T> =
+            MutableBufferFactory(MutableBuffer.Companion::boxing)
+    }
+}
 
 /**
  * A generic read-only random-access structure for both primitives and objects.
@@ -30,11 +51,11 @@ public typealias MutableBufferFactory<T> = (Int, (Int) -> T) -> MutableBuffer<T>
  *
  * @param T the type of elements contained in the buffer.
  */
-public interface Buffer<out T> {
+public interface Buffer<out T> : WithSize {
     /**
      * The size of this buffer.
      */
-    public val size: Int
+    override val size: Int
 
     /**
      * Gets element at given index.
@@ -44,7 +65,7 @@ public interface Buffer<out T> {
     /**
      * Iterates over all elements.
      */
-    public operator fun iterator(): Iterator<T>
+    public operator fun iterator(): Iterator<T> = indices.asSequence().map(::get).iterator()
 
     override fun toString(): String
 
@@ -94,7 +115,6 @@ public interface Buffer<out T> {
          *
          * The [size] is specified, and each element is calculated by calling the specified [initializer] function.
          */
-        @Suppress("UNCHECKED_CAST")
         public inline fun <reified T : Any> auto(size: Int, initializer: (Int) -> T): Buffer<T> =
             auto(T::class, size, initializer)
     }
@@ -103,7 +123,14 @@ public interface Buffer<out T> {
 /**
  * Returns an [IntRange] of the valid indices for this [Buffer].
  */
-public val Buffer<*>.indices: IntRange get() = 0 until size
+public val <T> Buffer<T>.indices: IntRange get() = 0 until size
+
+public operator fun <T> Buffer<T>.get(index: UInt): T = get(index.toInt())
+
+/**
+ * if index is in range of buffer, return the value. Otherwise, return null.
+ */
+public fun <T> Buffer<T>.getOrNull(index: Int): T? = if (index in indices) get(index) else null
 
 public fun <T> Buffer<T>.first(): T {
     require(size > 0) { "Can't get the first element of empty buffer" }

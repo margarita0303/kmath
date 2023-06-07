@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 KMath contributors.
+ * Copyright 2018-2022 KMath contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
@@ -9,7 +9,7 @@ import kotlin.jvm.JvmInline
 import kotlin.reflect.KClass
 
 /**
- * A entity that contains a set of features defined by their types
+ * An entity that contains a set of features defined by their types
  */
 public interface Featured<F : Any> {
     public fun <T : F> getFeature(type: FeatureKey<T>): T?

@@ -1,17 +1,19 @@
 plugins {
-    kotlin("multiplatform")
-    id("ru.mipt.npm.gradle.common")
-    id("ru.mipt.npm.gradle.native")
+    id("space.kscience.gradle.mpp")
+}
+
+kscience{
+    jvm()
+    js()
+    native()
+
+    dependencies {
+        api(projects.kmathCore)
+        api(projects.kmathStat)
+    }
 }
 
 kotlin.sourceSets {
-    all {
-        languageSettings.optIn("space.kscience.kmath.misc.UnstableKMathAPI")
-    }
-
-    filter { it.name.contains("test", true) }
-        .map(org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet::languageSettings)
-        .forEach { it.optIn("space.kscience.kmath.misc.PerformancePitfall") }
 
     commonMain {
         dependencies {
@@ -19,10 +21,16 @@ kotlin.sourceSets {
             api(project(":kmath-stat"))
         }
     }
+
+    commonTest{
+        dependencies{
+            implementation(projects.testUtils)
+        }
+    }
 }
 
 readme {
-    maturity = ru.mipt.npm.gradle.Maturity.PROTOTYPE
+    maturity = space.kscience.gradle.Maturity.PROTOTYPE
     propertyByTemplate("artifact", rootProject.file("docs/templates/ARTIFACT-TEMPLATE.md"))
 
     feature(

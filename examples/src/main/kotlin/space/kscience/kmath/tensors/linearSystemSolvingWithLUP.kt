@@ -1,10 +1,11 @@
 /*
- * Copyright 2018-2021 KMath contributors.
+ * Copyright 2018-2022 KMath contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
 package space.kscience.kmath.tensors
 
+import space.kscience.kmath.nd.ShapeND
 import space.kscience.kmath.tensors.core.DoubleTensor
 import space.kscience.kmath.tensors.core.tensorAlgebra
 import space.kscience.kmath.tensors.core.withBroadcast
@@ -15,13 +16,13 @@ fun main() = Double.tensorAlgebra.withBroadcast {// work in context with linear 
 
     // set true value of x
     val trueX = fromArray(
-        intArrayOf(4),
+        ShapeND(4),
         doubleArrayOf(-2.0, 1.5, 6.8, -2.4)
     )
 
     // and A matrix
     val a = fromArray(
-        intArrayOf(4, 4),
+        ShapeND(4, 4),
         doubleArrayOf(
             0.5, 10.5, 4.5, 1.0,
             8.5, 0.9, 12.8, 0.1,
@@ -40,7 +41,7 @@ fun main() = Double.tensorAlgebra.withBroadcast {// work in context with linear 
     // solve `Ax = b` system using LUP decomposition
 
     // get P, L, U such that PA = LU
-    val (p, l, u) = a.lu()
+    val (p, l, u) = lu(a)
 
     // check P is permutation matrix
     println("P:\n$p")
@@ -64,9 +65,9 @@ fun main() = Double.tensorAlgebra.withBroadcast {// work in context with linear 
     // this function returns solution x of a system lx = b, l should be lower triangular
     fun solveLT(l: DoubleTensor, b: DoubleTensor): DoubleTensor {
         val n = l.shape[0]
-        val x = zeros(intArrayOf(n))
+        val x = zeros(ShapeND(n))
         for (i in 0 until n) {
-            x[intArrayOf(i)] = (b[intArrayOf(i)] - l[i].dot(x).value()) / l[intArrayOf(i, i)]
+            x[intArrayOf(i)] = (b[intArrayOf(i)] - l.getTensor(i).dot(x).value()) / l[intArrayOf(i, i)]
         }
         return x
     }
@@ -75,7 +76,7 @@ fun main() = Double.tensorAlgebra.withBroadcast {// work in context with linear 
 
     // solveLT(l, b) function can be easily adapted for upper triangular matrix by the permutation matrix revMat
     // create it by placing ones on side diagonal
-    val revMat = u.zeroesLike()
+    val revMat = zeroesLike(u)
     val n = revMat.shape[0]
     for (i in 0 until n) {
         revMat[intArrayOf(i, n - 1 - i)] = 1.0

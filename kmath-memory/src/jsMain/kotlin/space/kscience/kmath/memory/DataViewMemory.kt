@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 KMath contributors.
+ * Copyright 2018-2022 KMath contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
@@ -41,7 +41,7 @@ private class DataViewMemory(val view: DataView) : Memory {
         override fun readLong(offset: Int): Long =
             view.getInt32(offset, false).toLong() shl 32 or view.getInt32(offset + 4, false).toLong()
 
-        override fun release() {
+        override fun close() {
             // does nothing on JS
         }
     }
@@ -76,7 +76,7 @@ private class DataViewMemory(val view: DataView) : Memory {
             view.setInt32(offset + 4, (value and 0xffffffffL).toInt(), littleEndian = false)
         }
 
-        override fun release() {
+        override fun close() {
             // does nothing on JS
         }
     }

@@ -1,14 +1,14 @@
 /*
- * Copyright 2018-2021 KMath contributors.
+ * Copyright 2018-2022 KMath contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
 package space.kscience.kmath.nd
 
+import space.kscience.kmath.PerformancePitfall
 import space.kscience.kmath.linear.LinearSpace
 import space.kscience.kmath.misc.Feature
 import space.kscience.kmath.misc.Featured
-import space.kscience.kmath.misc.PerformancePitfall
 import space.kscience.kmath.operations.Ring
 import space.kscience.kmath.operations.invoke
 import space.kscience.kmath.structures.Buffer
@@ -33,7 +33,7 @@ public interface StructureND<out T> : Featured<StructureFeature>, WithShape {
      * The shape of structure i.e., non-empty sequence of non-negative integers that specify sizes of dimensions of
      * this structure.
      */
-    override val shape: Shape
+    override val shape: ShapeND
 
     /**
      * The count of dimensions in this structure. It should be equal to size of [shape].
@@ -46,6 +46,7 @@ public interface StructureND<out T> : Featured<StructureFeature>, WithShape {
      * @param index the indices.
      * @return the value.
      */
+    @PerformancePitfall
     public operator fun get(index: IntArray): T
 
     /**
@@ -82,7 +83,7 @@ public interface StructureND<out T> : Featured<StructureFeature>, WithShape {
         public fun contentEquals(
             st1: StructureND<Double>,
             st2: StructureND<Double>,
-            tolerance: Double = 1e-11
+            tolerance: Double = 1e-11,
         ): Boolean {
             if (st1 === st2) return true
 
@@ -97,20 +98,27 @@ public interface StructureND<out T> : Featured<StructureFeature>, WithShape {
         /**
          * Debug output to string
          */
+        @OptIn(PerformancePitfall::class)
         public fun toString(structure: StructureND<*>): String {
             val bufferRepr: String = when (structure.shape.size) {
                 1 -> (0 until structure.shape[0]).map { structure[it] }
                     .joinToString(prefix = "[", postfix = "]", separator = ", ")
-                2 -> (0 until structure.shape[0]).joinToString(prefix = "[", postfix = "]", separator = ", ") { i ->
-                    (0 until structure.shape[1]).joinToString(prefix = "[", postfix = "]", separator = ", ") { j ->
+
+                2 -> (0 until structure.shape[0]).joinToString(
+                    prefix = "[\n",
+                    postfix = "\n]",
+                    separator = ",\n"
+                ) { i ->
+                    (0 until structure.shape[1]).joinToString(prefix = "  [", postfix = "]", separator = ", ") { j ->
                         structure[i, j].toString()
                     }
                 }
+
                 else -> "..."
             }
             val className = structure::class.simpleName ?: "StructureND"
 
-            return "$className(shape=${structure.shape.contentToString()}, buffer=$bufferRepr)"
+            return "$className(shape=${structure.shape}, buffer=$bufferRepr)"
         }
 
         /**
@@ -120,7 +128,7 @@ public interface StructureND<out T> : Featured<StructureFeature>, WithShape {
          */
         public fun <T> buffered(
             strides: Strides,
-            bufferFactory: BufferFactory<T> = Buffer.Companion::boxing,
+            bufferFactory: BufferFactory<T> = BufferFactory.boxing(),
             initializer: (IntArray) -> T,
         ): BufferND<T> = BufferND(strides, bufferFactory(strides.linearSize) { i -> initializer(strides.index(i)) })
 
@@ -139,28 +147,28 @@ public interface StructureND<out T> : Featured<StructureFeature>, WithShape {
         ): BufferND<T> = BufferND(strides, Buffer.auto(type, strides.linearSize) { i -> initializer(strides.index(i)) })
 
         public fun <T> buffered(
-            shape: IntArray,
-            bufferFactory: BufferFactory<T> = Buffer.Companion::boxing,
+            shape: ShapeND,
+            bufferFactory: BufferFactory<T> = BufferFactory.boxing(),
             initializer: (IntArray) -> T,
-        ): BufferND<T> = buffered(DefaultStrides(shape), bufferFactory, initializer)
+        ): BufferND<T> = buffered(ColumnStrides(shape), bufferFactory, initializer)
 
         public inline fun <reified T : Any> auto(
-            shape: IntArray,
+            shape: ShapeND,
             crossinline initializer: (IntArray) -> T,
-        ): BufferND<T> = auto(DefaultStrides(shape), initializer)
+        ): BufferND<T> = auto(ColumnStrides(shape), initializer)
 
         @JvmName("autoVarArg")
         public inline fun <reified T : Any> auto(
             vararg shape: Int,
             crossinline initializer: (IntArray) -> T,
         ): BufferND<T> =
-            auto(DefaultStrides(shape), initializer)
+            auto(ColumnStrides(ShapeND(shape)), initializer)
 
         public inline fun <T : Any> auto(
             type: KClass<T>,
             vararg shape: Int,
             crossinline initializer: (IntArray) -> T,
-        ): BufferND<T> = auto(type, DefaultStrides(shape), initializer)
+        ): BufferND<T> = auto(type, ColumnStrides(ShapeND(shape)), initializer)
     }
 }
 
@@ -208,7 +216,12 @@ public fun <T : Comparable<T>> LinearSpace<T, Ring<T>>.contentEquals(
  * @param index the indices.
  * @return the value.
  */
+@PerformancePitfall
 public operator fun <T> StructureND<T>.get(vararg index: Int): T = get(index)
+
+public operator fun StructureND<Double>.get(vararg index: Int): Double = getDouble(index)
+
+public operator fun StructureND<Int>.get(vararg index: Int): Int = getInt(index)
 
 //@UnstableKMathAPI
 //public inline fun <reified T : StructureFeature> StructureND<*>.getFeature(): T? = getFeature(T::class)
@@ -223,20 +236,14 @@ public interface MutableStructureND<T> : StructureND<T> {
      * @param index the indices.
      * @param value the value.
      */
+    @PerformancePitfall
     public operator fun set(index: IntArray, value: T)
 }
 
 /**
- * Transform a structure element-by element in place.
+ * Set value at specified indices
  */
-@OptIn(PerformancePitfall::class)
-public inline fun <T> MutableStructureND<T>.mapInPlace(action: (index: IntArray, t: T) -> T): Unit =
-    elements().forEach { (index, oldValue) -> this[index] = action(index, oldValue) }
-
-public inline fun <reified T : Any> StructureND<T>.zip(
-    struct: StructureND<T>,
-    crossinline block: (T, T) -> T,
-): StructureND<T> {
-    require(shape.contentEquals(struct.shape)) { "Shape mismatch in structure combination" }
-    return StructureND.auto(shape) { block(this[it], struct[it]) }
+@PerformancePitfall
+public operator fun <T> MutableStructureND<T>.set(vararg index: Int, value: T) {
+    set(index, value)
 }

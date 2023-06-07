@@ -1,12 +1,12 @@
 /*
- * Copyright 2018-2021 KMath contributors.
+ * Copyright 2018-2022 KMath contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
 package space.kscience.kmath.tensors
 
-import space.kscience.kmath.tensors.core.tensorAlgebra
-import space.kscience.kmath.tensors.core.withBroadcast
+import space.kscience.kmath.nd.ShapeND
+import space.kscience.kmath.tensors.core.*
 
 
 // simple PCA
@@ -16,49 +16,49 @@ fun main(): Unit = Double.tensorAlgebra.withBroadcast {  // work in context with
 
     // assume x is range from 0 until 10
     val x = fromArray(
-        intArrayOf(10),
+        ShapeND(10),
         DoubleArray(10) { it.toDouble() }
     )
 
     // take y dependent on x with noise
-    val y = 2.0 * x + (3.0 + x.randomNormalLike(seed) * 1.5)
+    val y = 2.0 * x + (3.0 + randomNormalLike(x, seed) * 1.5)
 
     println("x:\n$x")
     println("y:\n$y")
 
     // stack them into single dataset
-    val dataset = stack(listOf(x, y)).transpose()
+    val dataset = stack(listOf(x, y)).transposed()
 
     // normalize both x and y
-    val xMean = x.mean()
-    val yMean = y.mean()
+    val xMean = mean(x)
+    val yMean = mean(y)
 
-    val xStd = x.std()
-    val yStd = y.std()
+    val xStd = std(x)
+    val yStd = std(y)
 
-    val xScaled = (x - xMean) / xStd
-    val yScaled = (y - yMean) / yStd
+    val xScaled: DoubleTensor = (x - xMean) / xStd
+    val yScaled: DoubleTensor = (y - yMean) / yStd
 
     // save means ans standard deviations for further recovery
     val mean = fromArray(
-        intArrayOf(2),
+        ShapeND(2),
         doubleArrayOf(xMean, yMean)
     )
     println("Means:\n$mean")
 
     val std = fromArray(
-        intArrayOf(2),
+        ShapeND(2),
         doubleArrayOf(xStd, yStd)
     )
     println("Standard deviations:\n$std")
 
     // calculate the covariance matrix of scaled x and y
-    val covMatrix = cov(listOf(xScaled, yScaled))
+    val covMatrix = covariance(listOf(xScaled.asDoubleTensor1D(), yScaled.asDoubleTensor1D()))
     println("Covariance matrix:\n$covMatrix")
 
     // and find out eigenvector of it
-    val (_, evecs) = covMatrix.symEig()
-    val v = evecs[0]
+    val (_, evecs) = symEig(covMatrix)
+    val v = evecs.getTensor(0)
     println("Eigenvector:\n$v")
 
     // reduce dimension of dataset
@@ -68,7 +68,7 @@ fun main(): Unit = Double.tensorAlgebra.withBroadcast {  // work in context with
     // we can restore original data from reduced data;
     // for example, find 7th element of dataset.
     val n = 7
-    val restored = (datasetReduced[n] dot v.view(intArrayOf(1, 2))) * std + mean
-    println("Original value:\n${dataset[n]}")
+    val restored = (datasetReduced.getTensor(n) dot v.view(ShapeND(1, 2))) * std + mean
+    println("Original value:\n${dataset.getTensor(n)}")
     println("Restored value:\n$restored")
 }

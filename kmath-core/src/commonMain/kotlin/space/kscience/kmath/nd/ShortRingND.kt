@@ -1,11 +1,11 @@
 /*
- * Copyright 2018-2021 KMath contributors.
+ * Copyright 2018-2022 KMath contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
 package space.kscience.kmath.nd
 
-import space.kscience.kmath.misc.UnstableKMathAPI
+import space.kscience.kmath.UnstableKMathAPI
 import space.kscience.kmath.operations.NumbersAddOps
 import space.kscience.kmath.operations.ShortRing
 import space.kscience.kmath.operations.bufferAlgebra
@@ -18,16 +18,17 @@ public sealed class ShortRingOpsND : BufferedRingOpsND<Short, ShortRing>(ShortRi
 
 @OptIn(UnstableKMathAPI::class)
 public class ShortRingND(
-    override val shape: Shape
+    override val shape: ShapeND
 ) : ShortRingOpsND(), RingND<Short, ShortRing>, NumbersAddOps<StructureND<Short>> {
 
     override fun number(value: Number): BufferND<Short> {
-        val d = value.toShort() // minimize conversions
-        return structureND(shape) { d }
+        val short
+        = value.toShort() // minimize conversions
+        return structureND(shape) { short }
     }
 }
 
 public inline fun <R> ShortRing.withNdAlgebra(vararg shape: Int, action: ShortRingND.() -> R): R {
     contract { callsInPlace(action, InvocationKind.EXACTLY_ONCE) }
-    return ShortRingND(shape).run(action)
+    return ShortRingND(ShapeND(shape)).run(action)
 }

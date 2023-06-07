@@ -1,21 +1,22 @@
 /*
- * Copyright 2018-2021 KMath contributors.
+ * Copyright 2018-2022 KMath contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
 package space.kscience.kmath.benchmarks
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import kotlinx.benchmark.gradle.BenchmarksExtension
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.json.Json
 import org.gradle.api.Project
-import ru.mipt.npm.gradle.KScienceReadmeExtension
+import space.kscience.gradle.KScienceReadmeExtension
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
 import java.time.format.SignStyle
 import java.time.temporal.ChronoField.*
+import java.util.*
 
 private val ISO_DATE_TIME: DateTimeFormatter = DateTimeFormatterBuilder().run {
     parseCaseInsensitive()
@@ -45,12 +46,14 @@ private val ISO_DATE_TIME: DateTimeFormatter = DateTimeFormatterBuilder().run {
 
 private fun noun(number: Number, singular: String, plural: String) = if (number.toLong() == 1L) singular else plural
 
+private val jsonMapper = jacksonObjectMapper()
+
 fun Project.addBenchmarkProperties() {
     val benchmarksProject = this
     rootProject.subprojects.forEach { p ->
         p.extensions.findByType(KScienceReadmeExtension::class.java)?.run {
             benchmarksProject.extensions.findByType(BenchmarksExtension::class.java)?.configurations?.forEach { cfg ->
-                property("benchmark${cfg.name.capitalize()}") {
+                property("benchmark${cfg.name.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }}") {
                     val launches = benchmarksProject.buildDir.resolve("reports/benchmarks/${cfg.name}")
 
                     val resDirectory = launches.listFiles()?.maxByOrNull {
@@ -60,8 +63,7 @@ fun Project.addBenchmarkProperties() {
                     if (resDirectory == null || !(resDirectory.resolve("jvm.json")).exists()) {
                         "> **Can't find appropriate benchmark data. Try generating readme files after running benchmarks**."
                     } else {
-                        val reports =
-                            Json.decodeFromString<List<JmhReport>>(resDirectory.resolve("jvm.json").readText())
+                        val reports: List<JmhReport> = jsonMapper.readValue<List<JmhReport>>(resDirectory.resolve("jvm.json"))
 
                         buildString {
                             appendLine("<details>")

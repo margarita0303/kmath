@@ -1,27 +1,19 @@
 plugins {
-    kotlin("multiplatform")
-    id("ru.mipt.npm.gradle.common")
-    id("ru.mipt.npm.gradle.native")
+    id("space.kscience.gradle.mpp")
 }
 
-kotlin.sourceSets {
-    all {
-        with(languageSettings) {
-            optIn("kotlinx.coroutines.InternalCoroutinesApi")
-            optIn("kotlinx.coroutines.ExperimentalCoroutinesApi")
-            optIn("kotlinx.coroutines.FlowPreview")
-        }
-    }
+kscience {
+    jvm()
+    js()
+    native()
 
-    commonMain {
-        dependencies {
-            api(project(":kmath-core"))
-            api(project(":kmath-complex"))
-            api("org.jetbrains.kotlinx:kotlinx-coroutines-core:${ru.mipt.npm.gradle.KScienceVersions.coroutinesVersion}")
-        }
+    dependencies {
+        api(project(":kmath-core"))
+        api(project(":kmath-complex"))
+        api(spclibs.kotlinx.coroutines.core)
     }
 }
 
 readme {
-    maturity = ru.mipt.npm.gradle.Maturity.EXPERIMENTAL
+    maturity = space.kscience.gradle.Maturity.EXPERIMENTAL
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 KMath contributors.
+ * Copyright 2018-2022 KMath contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
@@ -12,6 +12,8 @@ import kotlinx.html.unsafe
 import org.jetbrains.kotlinx.jupyter.api.DisplayResult
 import org.jetbrains.kotlinx.jupyter.api.HTML
 import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterIntegration
+import space.kscience.kmath.PerformancePitfall
+import space.kscience.kmath.UnstableKMathAPI
 import space.kscience.kmath.ast.rendering.FeaturedMathRendererWithPostProcess
 import space.kscience.kmath.ast.rendering.MathMLSyntaxRenderer
 import space.kscience.kmath.ast.rendering.renderWithStringBuilder
@@ -19,7 +21,6 @@ import space.kscience.kmath.complex.Complex
 import space.kscience.kmath.complex.Quaternion
 import space.kscience.kmath.expressions.MST
 import space.kscience.kmath.expressions.MstRing
-import space.kscience.kmath.misc.PerformancePitfall
 import space.kscience.kmath.nd.Structure2D
 import space.kscience.kmath.operations.asSequence
 import space.kscience.kmath.operations.invoke
@@ -30,6 +31,7 @@ import space.kscience.kmath.structures.Buffer
  */
 public fun Number.toMst(): MST.Numeric = MST.Numeric(this)
 
+@OptIn(UnstableKMathAPI::class)
 internal class KMathJupyter : JupyterIntegration() {
     private val mathRender = FeaturedMathRendererWithPostProcess.Default
     private val syntaxRender = MathMLSyntaxRenderer
@@ -47,11 +49,13 @@ internal class KMathJupyter : JupyterIntegration() {
                 syntaxRender.renderPart(mathRender.render(MST.Numeric(it)), s)
                 +s.toString()
             }
+
             is MST -> {
                 val s = StringBuilder()
                 syntaxRender.renderPart(mathRender.render(it), s)
                 +s.toString()
             }
+
             else -> {
                 +"<ms>"
                 +it.toString()

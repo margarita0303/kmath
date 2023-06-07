@@ -1,15 +1,15 @@
 /*
- * Copyright 2018-2021 KMath contributors.
+ * Copyright 2018-2022 KMath contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
 package space.kscience.kmath.ejml
 
+import space.kscience.kmath.UnstableKMathAPI
 import space.kscience.kmath.linear.InverseMatrixFeature
 import space.kscience.kmath.linear.LinearSpace
 import space.kscience.kmath.linear.Matrix
 import space.kscience.kmath.linear.Point
-import space.kscience.kmath.misc.UnstableKMathAPI
 import space.kscience.kmath.nd.Structure2D
 import space.kscience.kmath.operations.Ring
 

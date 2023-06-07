@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 KMath contributors.
+ * Copyright 2018-2022 KMath contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
@@ -319,7 +319,9 @@ public object EjmlLinearSpace${ops} : EjmlLinearSpace<${type}, ${kmathAlgebra}, 
     }
 
             else -> null
-        }?.let(type::cast)
+        }?.let{
+            type.cast(it)
+        }
     }
 
     /**
@@ -383,7 +385,7 @@ import org.ejml.sparse.csc.factory.LinearSolverFactory_DSCC
 import org.ejml.sparse.csc.factory.LinearSolverFactory_FSCC
 import space.kscience.kmath.linear.*
 import space.kscience.kmath.linear.Matrix
-import space.kscience.kmath.misc.UnstableKMathAPI
+import space.kscience.kmath.UnstableKMathAPI
 import space.kscience.kmath.nd.StructureFeature
 import space.kscience.kmath.operations.DoubleField
 import space.kscience.kmath.operations.FloatField

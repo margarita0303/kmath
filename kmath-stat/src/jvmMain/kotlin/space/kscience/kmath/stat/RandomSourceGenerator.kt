@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 KMath contributors.
+ * Copyright 2018-2022 KMath contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
@@ -7,13 +7,17 @@ package space.kscience.kmath.stat
 
 import org.apache.commons.rng.UniformRandomProvider
 import org.apache.commons.rng.simple.RandomSource
+import space.kscience.kmath.random.RandomGenerator
 
 /**
  * Implements [RandomGenerator] by delegating all operations to [RandomSource].
  *
  * @property source the underlying [RandomSource] object.
  */
-public class RandomSourceGenerator internal constructor(public val source: RandomSource, seed: Long?) : RandomGenerator {
+public class RandomSourceGenerator internal constructor(
+    public val source: RandomSource,
+    seed: Long?,
+) : RandomGenerator {
     internal val random: UniformRandomProvider = seed?.let { RandomSource.create(source, seed) }
         ?: RandomSource.create(source)
 

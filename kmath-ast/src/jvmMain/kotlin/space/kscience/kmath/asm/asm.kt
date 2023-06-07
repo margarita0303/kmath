@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 KMath contributors.
+ * Copyright 2018-2022 KMath contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
@@ -7,11 +7,11 @@
 
 package space.kscience.kmath.asm
 
+import space.kscience.kmath.UnstableKMathAPI
 import space.kscience.kmath.asm.internal.*
 import space.kscience.kmath.ast.TypedMst
 import space.kscience.kmath.ast.evaluateConstants
 import space.kscience.kmath.expressions.*
-import space.kscience.kmath.misc.UnstableKMathAPI
 import space.kscience.kmath.operations.Algebra
 import space.kscience.kmath.operations.DoubleField
 import space.kscience.kmath.operations.IntRing

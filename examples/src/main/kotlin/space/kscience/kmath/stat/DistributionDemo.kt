@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 KMath contributors.
+ * Copyright 2018-2022 KMath contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
@@ -9,6 +9,7 @@ import kotlinx.coroutines.runBlocking
 import space.kscience.kmath.chains.Chain
 import space.kscience.kmath.chains.combineWithState
 import space.kscience.kmath.distributions.NormalDistribution
+import space.kscience.kmath.random.RandomGenerator
 
 private data class AveragingChainState(var num: Int = 0, var value: Double = 0.0)
 

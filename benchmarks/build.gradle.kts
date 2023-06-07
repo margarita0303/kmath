@@ -1,10 +1,11 @@
 @file:Suppress("UNUSED_VARIABLE")
 
+import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 import space.kscience.kmath.benchmarks.addBenchmarkProperties
 
 plugins {
     kotlin("multiplatform")
-    kotlin("plugin.allopen")
+    alias(spclibs.plugins.kotlin.plugin.allopen)
     id("org.jetbrains.kotlinx.benchmark")
 }
 
@@ -14,6 +15,8 @@ sourceSets.register("benchmarks")
 repositories {
     mavenCentral()
 }
+
+val multikVersion: String by rootProject.extra
 
 kotlin {
     jvm()
@@ -26,6 +29,9 @@ kotlin {
         all {
             languageSettings {
                 progressiveMode = true
+                optIn("kotlin.contracts.ExperimentalContracts")
+                optIn("kotlin.ExperimentalUnsignedTypes")
+                optIn("space.kscience.kmath.UnstableKMathAPI")
             }
         }
 
@@ -39,7 +45,9 @@ kotlin {
                 implementation(project(":kmath-dimensions"))
                 implementation(project(":kmath-for-real"))
                 implementation(project(":kmath-tensors"))
-                implementation("org.jetbrains.kotlinx:kotlinx-benchmark-runtime:0.4.2")
+                implementation(project(":kmath-multik"))
+                implementation("org.jetbrains.kotlinx:multik-default:$multikVersion")
+                implementation(spclibs.kotlinx.benchmark.runtime)
             }
         }
 
@@ -51,7 +59,6 @@ kotlin {
                 implementation(project(":kmath-kotlingrad"))
                 implementation(project(":kmath-viktor"))
                 implementation(project(":kmath-jafama"))
-                implementation(project(":kmath-multik"))
                 implementation(projects.kmath.kmathTensorflow)
                 implementation("org.tensorflow:tensorflow-core-platform:0.4.0")
                 implementation("org.nd4j:nd4j-native:1.0.0-M1")
@@ -138,12 +145,10 @@ benchmark {
         commonConfiguration()
         include("ViktorLogBenchmark")
     }
-}
 
-// Fix kotlinx-benchmarks bug
-afterEvaluate {
-    val jvmBenchmarkJar by tasks.getting(org.gradle.jvm.tasks.Jar::class) {
-        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    configurations.register("integration") {
+        commonConfiguration()
+        include("IntegrationBenchmark")
     }
 }
 
@@ -151,11 +156,11 @@ kotlin.sourceSets.all {
     with(languageSettings) {
         optIn("kotlin.contracts.ExperimentalContracts")
         optIn("kotlin.ExperimentalUnsignedTypes")
-        optIn("space.kscience.kmath.misc.UnstableKMathAPI")
+        optIn("space.kscience.kmath.UnstableKMathAPI")
     }
 }
 
-tasks.withType<org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile> {
+tasks.withType<KotlinJvmCompile> {
     kotlinOptions {
         jvmTarget = "11"
         freeCompilerArgs = freeCompilerArgs + "-Xjvm-default=all" + "-Xlambdas=indy"
@@ -163,7 +168,7 @@ tasks.withType<org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile> {
 }
 
 readme {
-    maturity = ru.mipt.npm.gradle.Maturity.EXPERIMENTAL
+    maturity = space.kscience.gradle.Maturity.EXPERIMENTAL
 }
 
 addBenchmarkProperties()

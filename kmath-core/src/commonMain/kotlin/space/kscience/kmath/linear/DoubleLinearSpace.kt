@@ -1,14 +1,12 @@
 /*
- * Copyright 2018-2021 KMath contributors.
+ * Copyright 2018-2022 KMath contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
 package space.kscience.kmath.linear
 
-import space.kscience.kmath.misc.PerformancePitfall
-import space.kscience.kmath.nd.DoubleFieldOpsND
-import space.kscience.kmath.nd.as2D
-import space.kscience.kmath.nd.asND
+import space.kscience.kmath.PerformancePitfall
+import space.kscience.kmath.nd.*
 import space.kscience.kmath.operations.DoubleBufferOps
 import space.kscience.kmath.operations.DoubleField
 import space.kscience.kmath.operations.invoke
@@ -23,7 +21,7 @@ public object DoubleLinearSpace : LinearSpace<Double, DoubleField> {
         rows: Int,
         columns: Int,
         initializer: DoubleField.(i: Int, j: Int) -> Double
-    ): Matrix<Double> = DoubleFieldOpsND.structureND(intArrayOf(rows, columns)) { (i, j) ->
+    ): Matrix<Double> = DoubleFieldOpsND.structureND(ShapeND(rows, columns)) { (i, j) ->
         DoubleField.initializer(i, j)
     }.as2D()
 

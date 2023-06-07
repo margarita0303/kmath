@@ -1,22 +1,28 @@
 /*
- * Copyright 2018-2021 KMath contributors.
+ * Copyright 2018-2022 KMath contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
 package space.kscience.kmath.structures
 
+import space.kscience.kmath.PerformancePitfall
 import space.kscience.kmath.linear.linearSpace
-import space.kscience.kmath.misc.PerformancePitfall
-import space.kscience.kmath.nd.*
+import space.kscience.kmath.nd.StructureND
+import space.kscience.kmath.nd.get
+import space.kscience.kmath.nd.ndAlgebra
+import space.kscience.kmath.nd.structureND
 import space.kscience.kmath.operations.DoubleField
 import space.kscience.kmath.operations.Norm
 import space.kscience.kmath.operations.algebra
 import space.kscience.kmath.operations.invoke
+import kotlin.collections.component1
+import kotlin.collections.component2
 import kotlin.math.abs
 import kotlin.math.pow
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
+@OptIn(PerformancePitfall::class)
 @Suppress("UNUSED_VARIABLE")
 class NumberNDFieldTest {
     val algebra = DoubleField.ndAlgebra
@@ -74,7 +80,9 @@ class NumberNDFieldTest {
 
     @Test
     fun combineTest() {
-        val division = array1.zip(array2, Double::div)
+        algebra {
+            val division = zip(array1, array2) { l, r -> l / r }
+        }
     }
 
     object L2Norm : Norm<StructureND<Number>, Double> {
@@ -86,7 +94,7 @@ class NumberNDFieldTest {
     @Test
     fun testInternalContext() {
         algebra {
-            (DoubleField.ndAlgebra(*array1.shape)) { with(L2Norm) { 1 + norm(array1) + exp(array2) } }
+            (DoubleField.ndAlgebra(array1.shape)) { with(L2Norm) { 1 + norm(array1) + exp(array2) } }
         }
     }
 }

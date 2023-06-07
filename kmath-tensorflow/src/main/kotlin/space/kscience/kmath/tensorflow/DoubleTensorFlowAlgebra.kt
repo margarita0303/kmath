@@ -1,3 +1,8 @@
+/*
+ * Copyright 2018-2022 KMath contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
 package space.kscience.kmath.tensorflow
 
 import org.tensorflow.Graph
@@ -5,10 +10,11 @@ import org.tensorflow.Output
 import org.tensorflow.ndarray.NdArray
 import org.tensorflow.op.core.Constant
 import org.tensorflow.types.TFloat64
+import space.kscience.kmath.PerformancePitfall
+import space.kscience.kmath.UnstableKMathAPI
 import space.kscience.kmath.expressions.Symbol
-import space.kscience.kmath.misc.PerformancePitfall
-import space.kscience.kmath.nd.DefaultStrides
-import space.kscience.kmath.nd.Shape
+import space.kscience.kmath.nd.ColumnStrides
+import space.kscience.kmath.nd.ShapeND
 import space.kscience.kmath.nd.StructureND
 import space.kscience.kmath.operations.DoubleField
 import space.kscience.kmath.operations.PowerOperations
@@ -22,6 +28,8 @@ public class DoubleTensorFlowOutput(
 
 }
 
+internal fun ShapeND.toLongArray(): LongArray = LongArray(size) { get(it).toLong() }
+
 public class DoubleTensorFlowAlgebra internal constructor(
     graph: Graph,
 ) : TensorFlowAlgebra<Double, TFloat64, DoubleField>(graph), PowerOperations<StructureND<Double>> {
@@ -29,11 +37,11 @@ public class DoubleTensorFlowAlgebra internal constructor(
     override val elementAlgebra: DoubleField get() = DoubleField
 
     override fun structureND(
-        shape: Shape,
+        shape: ShapeND,
         initializer: DoubleField.(IntArray) -> Double,
     ): StructureND<Double> {
         val res = TFloat64.tensorOf(org.tensorflow.ndarray.Shape.of(*shape.toLongArray())) { array ->
-            DefaultStrides(shape).forEach { index ->
+            ColumnStrides(shape).forEach { index ->
                 array.setDouble(elementAlgebra.initializer(index), *index.toLongArray())
             }
         }
@@ -74,6 +82,7 @@ public class DoubleTensorFlowAlgebra internal constructor(
  *
  * The resulting tensor is available outside of scope
  */
+@UnstableKMathAPI
 public fun DoubleField.produceWithTF(
     block: DoubleTensorFlowAlgebra.() -> StructureND<Double>,
 ): StructureND<Double> = Graph().use { graph ->
@@ -86,6 +95,7 @@ public fun DoubleField.produceWithTF(
  *
  * The resulting tensors are available outside of scope
  */
+@OptIn(UnstableKMathAPI::class)
 public fun DoubleField.produceMapWithTF(
     block: DoubleTensorFlowAlgebra.() -> Map<Symbol, StructureND<Double>>,
 ): Map<Symbol, StructureND<Double>> = Graph().use { graph ->

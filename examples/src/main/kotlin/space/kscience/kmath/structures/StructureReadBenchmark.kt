@@ -1,20 +1,23 @@
 /*
- * Copyright 2018-2021 KMath contributors.
+ * Copyright 2018-2022 KMath contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
 package space.kscience.kmath.structures
 
+import space.kscience.kmath.PerformancePitfall
 import space.kscience.kmath.nd.BufferND
-import space.kscience.kmath.nd.DefaultStrides
+import space.kscience.kmath.nd.ColumnStrides
+import space.kscience.kmath.nd.ShapeND
 import kotlin.system.measureTimeMillis
 
 @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
+@OptIn(PerformancePitfall::class)
 fun main() {
     val n = 6000
     val array = DoubleArray(n * n) { 1.0 }
     val buffer = DoubleBuffer(array)
-    val strides = DefaultStrides(intArrayOf(n, n))
+    val strides = ColumnStrides(ShapeND(n, n))
     val structure = BufferND(strides, buffer)
 
     measureTimeMillis {

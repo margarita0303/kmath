@@ -1,16 +1,17 @@
 /*
- * Copyright 2018-2021 KMath contributors.
+ * Copyright 2018-2022 KMath contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
 package space.kscience.kmath.geometry
+
 
 import space.kscience.kmath.operations.toList
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 internal class Vector2DTest {
-    private val vector = Vector2D(1.0, -7.999)
+    private val vector = Euclidean2DSpace.vector(1.0, -7.999)
 
     @Test
     fun size() {

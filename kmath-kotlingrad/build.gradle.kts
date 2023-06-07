@@ -1,12 +1,11 @@
 plugins {
-    kotlin("jvm")
-    id("ru.mipt.npm.gradle.common")
+    id("space.kscience.gradle.jvm")
 }
 
 kotlin.sourceSets
     .filter { it.name.contains("test", true) }
     .map(org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet::languageSettings)
-    .forEach { it.optIn("space.kscience.kmath.misc.UnstableKMathAPI") }
+    .forEach { it.optIn("space.kscience.kmath.UnstableKMathAPI") }
 
 description = "Kotlin∇ integration module"
 
@@ -18,7 +17,7 @@ dependencies {
 }
 
 readme {
-    maturity = ru.mipt.npm.gradle.Maturity.EXPERIMENTAL
+    maturity = space.kscience.gradle.Maturity.EXPERIMENTAL
     propertyByTemplate("artifact", rootProject.file("docs/templates/ARTIFACT-TEMPLATE.md"))
 
     feature(

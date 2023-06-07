@@ -1,17 +1,17 @@
 /*
- * Copyright 2018-2021 KMath contributors.
+ * Copyright 2018-2022 KMath contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
 package space.kscience.kmath.integration
 
+import space.kscience.kmath.PerformancePitfall
+import space.kscience.kmath.UnstableKMathAPI
 import space.kscience.kmath.functions.PiecewisePolynomial
 import space.kscience.kmath.functions.integrate
 import space.kscience.kmath.interpolation.PolynomialInterpolator
 import space.kscience.kmath.interpolation.SplineInterpolator
 import space.kscience.kmath.interpolation.interpolatePolynomials
-import space.kscience.kmath.misc.PerformancePitfall
-import space.kscience.kmath.misc.UnstableKMathAPI
 import space.kscience.kmath.operations.*
 import space.kscience.kmath.structures.Buffer
 import space.kscience.kmath.structures.DoubleBuffer
@@ -65,9 +65,9 @@ public class SplineIntegrator<T : Comparable<T>>(
             DoubleBuffer(numPoints) { i -> range.start + i * step }
         }
 
-        val values = nodes.map(bufferFactory) { integrand.function(it) }
+        val values = nodes.mapToBuffer(bufferFactory) { integrand.function(it) }
         val polynomials = interpolator.interpolatePolynomials(
-            nodes.map(bufferFactory) { number(it) },
+            nodes.mapToBuffer(bufferFactory) { number(it) },
             values
         )
         val res = polynomials.integrate(algebra, number(range.start)..number(range.endInclusive))
@@ -93,7 +93,7 @@ public object DoubleSplineIntegrator : UnivariateIntegrator<Double> {
             DoubleBuffer(numPoints) { i -> range.start + i * step }
         }
 
-        val values = nodes.map { integrand.function(it) }
+        val values = nodes.mapToBuffer(::DoubleBuffer) { integrand.function(it) }
         val polynomials = interpolator.interpolatePolynomials(nodes, values)
         val res = polynomials.integrate(DoubleField, range)
         return integrand + IntegrandValue(res) + IntegrandCallsPerformed(integrand.calls + nodes.size)

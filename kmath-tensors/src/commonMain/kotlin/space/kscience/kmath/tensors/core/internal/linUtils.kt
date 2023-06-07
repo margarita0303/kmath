@@ -1,57 +1,20 @@
 /*
- * Copyright 2018-2021 KMath contributors.
+ * Copyright 2018-2022 KMath contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
 package space.kscience.kmath.tensors.core.internal
 
-import space.kscience.kmath.nd.MutableStructure1D
-import space.kscience.kmath.nd.MutableStructure2D
-import space.kscience.kmath.nd.as1D
-import space.kscience.kmath.nd.as2D
-import space.kscience.kmath.operations.asSequence
+import space.kscience.kmath.nd.*
 import space.kscience.kmath.operations.invoke
-import space.kscience.kmath.structures.VirtualBuffer
-import space.kscience.kmath.tensors.core.BufferedTensor
-import space.kscience.kmath.tensors.core.DoubleTensor
-import space.kscience.kmath.tensors.core.DoubleTensorAlgebra
-import space.kscience.kmath.tensors.core.IntTensor
+import space.kscience.kmath.structures.DoubleBuffer
+import space.kscience.kmath.structures.IntBuffer
+import space.kscience.kmath.structures.asBuffer
+import space.kscience.kmath.structures.indices
+import space.kscience.kmath.tensors.core.*
 import kotlin.math.abs
 import kotlin.math.min
 import kotlin.math.sqrt
-
-internal val <T> BufferedTensor<T>.vectors: VirtualBuffer<BufferedTensor<T>>
-    get() {
-        val n = shape.size
-        val vectorOffset = shape[n - 1]
-        val vectorShape = intArrayOf(shape.last())
-
-        return VirtualBuffer(numElements / vectorOffset) { index ->
-            val offset = index * vectorOffset
-            BufferedTensor(vectorShape, mutableBuffer, bufferStart + offset)
-        }
-    }
-
-
-internal fun <T> BufferedTensor<T>.vectorSequence(): Sequence<BufferedTensor<T>> = vectors.asSequence()
-
-/**
- * A random access alternative to [matrixSequence]
- */
-internal val <T> BufferedTensor<T>.matrices: VirtualBuffer<BufferedTensor<T>>
-    get() {
-        val n = shape.size
-        check(n >= 2) { "Expected tensor with 2 or more dimensions, got size $n" }
-        val matrixOffset = shape[n - 1] * shape[n - 2]
-        val matrixShape = intArrayOf(shape[n - 2], shape[n - 1])
-
-        return VirtualBuffer(numElements / matrixOffset) { index ->
-            val offset = index * matrixOffset
-            BufferedTensor(matrixShape, mutableBuffer, bufferStart + offset)
-        }
-    }
-
-internal fun <T> BufferedTensor<T>.matrixSequence(): Sequence<BufferedTensor<T>> = matrices.asSequence()
 
 internal fun dotTo(
     a: BufferedTensor<Double>,
@@ -59,21 +22,17 @@ internal fun dotTo(
     res: BufferedTensor<Double>,
     l: Int, m: Int, n: Int,
 ) {
-    val aStart = a.bufferStart
-    val bStart = b.bufferStart
-    val resStart = res.bufferStart
-
-    val aBuffer = a.mutableBuffer
-    val bBuffer = b.mutableBuffer
-    val resBuffer = res.mutableBuffer
+    val aBuffer = a.source
+    val bBuffer = b.source
+    val resBuffer = res.source
 
     for (i in 0 until l) {
         for (j in 0 until n) {
             var curr = 0.0
             for (k in 0 until m) {
-                curr += aBuffer[aStart + i * m + k] * bBuffer[bStart + k * n + j]
+                curr += aBuffer[i * m + k] * bBuffer[k * n + j]
             }
-            resBuffer[resStart + i * n + j] = curr
+            resBuffer[i * n + j] = curr
         }
     }
 }
@@ -129,29 +88,29 @@ internal fun luHelper(
     return false
 }
 
-internal fun <T> BufferedTensor<T>.setUpPivots(): IntTensor {
+internal fun <T> StructureND<T>.setUpPivots(): IntTensor {
     val n = this.shape.size
     val m = this.shape.last()
     val pivotsShape = IntArray(n - 1) { i -> this.shape[i] }
     pivotsShape[n - 2] = m + 1
 
     return IntTensor(
-        pivotsShape,
-        IntArray(pivotsShape.reduce(Int::times)) { 0 }
+        ShapeND(pivotsShape),
+        IntBuffer(pivotsShape.reduce(Int::times)) { 0 }
     )
 }
 
 internal fun DoubleTensorAlgebra.computeLU(
-    tensor: DoubleTensor,
+    tensor: StructureND<Double>,
     epsilon: Double,
 ): Pair<DoubleTensor, IntTensor>? {
 
     checkSquareMatrix(tensor.shape)
-    val luTensor = tensor.copy()
+    val luTensor = tensor.copyToTensor()
     val pivotsTensor = tensor.setUpPivots()
 
     for ((lu, pivots) in luTensor.matrixSequence().zip(pivotsTensor.vectorSequence()))
-        if (luHelper(lu.as2D(), pivots.as1D(), epsilon))
+        if (luHelper(lu.asDoubleTensor2D(), pivots.as1D(), epsilon))
             return null
 
     return Pair(luTensor, pivotsTensor)
@@ -252,23 +211,23 @@ internal fun DoubleTensorAlgebra.qrHelper(
 ) {
     checkSquareMatrix(matrix.shape)
     val n = matrix.shape[0]
-    val qM = q.as2D()
-    val matrixT = matrix.transpose(0, 1)
-    val qT = q.transpose(0, 1)
+    val qM = q.asDoubleTensor2D()
+    val matrixT = matrix.transposed(0, 1)
+    val qT = q.transposed(0, 1)
 
     for (j in 0 until n) {
-        val v = matrixT[j]
-        val vv = v.as1D()
+        val v = matrixT.getTensor(j)
+        val vv = v.asDoubleBuffer()
         if (j > 0) {
             for (i in 0 until j) {
-                r[i, j] = (qT[i] dot matrixT[j]).value()
+                r[i, j] = (qT.getTensor(i) dot matrixT.getTensor(j)).value()
                 for (k in 0 until n) {
-                    val qTi = qT[i].as1D()
+                    val qTi = qT.getTensor(i).asDoubleBuffer()
                     vv[k] = vv[k] - r[i, j] * qTi[k]
                 }
             }
         }
-        r[j, j] = DoubleTensorAlgebra { (v dot v).sqrt().value() }
+        r[j, j] = DoubleTensorAlgebra { sqrt((v dot v)).value() }
         for (i in 0 until n) {
             qM[i, j] = vv[i] / r[j, j]
         }
@@ -280,18 +239,18 @@ internal fun DoubleTensorAlgebra.svd1d(a: DoubleTensor, epsilon: Double = 1e-10)
     var v: DoubleTensor
     val b: DoubleTensor
     if (n > m) {
-        b = a.transpose(0, 1).dot(a)
-        v = DoubleTensor(intArrayOf(m), getRandomUnitVector(m, 0))
+        b = a.transposed(0, 1).dot(a)
+        v = DoubleTensor(ShapeND(m), DoubleBuffer.randomUnitVector(m, 0))
     } else {
-        b = a.dot(a.transpose(0, 1))
-        v = DoubleTensor(intArrayOf(n), getRandomUnitVector(n, 0))
+        b = a.dot(a.transposed(0, 1))
+        v = DoubleTensor(ShapeND(n), DoubleBuffer.randomUnitVector(n, 0))
     }
 
     var lastV: DoubleTensor
     while (true) {
         lastV = v
         v = b.dot(lastV)
-        val norm = DoubleTensorAlgebra { (v dot v).sqrt().value() }
+        val norm = DoubleTensorAlgebra { sqrt((v dot v)).value() }
         v = v.times(1.0 / norm)
         if (abs(v.dot(lastV).value()) > 1 - epsilon) {
             return v
@@ -308,15 +267,15 @@ internal fun DoubleTensorAlgebra.svdHelper(
     val (matrixU, matrixS, matrixV) = USV
 
     for (k in 0 until min(n, m)) {
-        var a = matrix.copy()
+        var a = matrix.copyToTensor()
         for ((singularValue, u, v) in res.slice(0 until k)) {
             val outerProduct = DoubleArray(u.shape[0] * v.shape[0])
             for (i in 0 until u.shape[0]) {
                 for (j in 0 until v.shape[0]) {
-                    outerProduct[i * v.shape[0] + j] = u[i].value() * v[j].value()
+                    outerProduct[i * v.shape[0] + j] = u.getTensor(i).value() * v.getTensor(j).value()
                 }
             }
-            a = a - singularValue.times(DoubleTensor(intArrayOf(u.shape[0], v.shape[0]), outerProduct))
+            a = a - singularValue.times(DoubleTensor(ShapeND(u.shape[0], v.shape[0]), outerProduct.asBuffer()))
         }
         var v: DoubleTensor
         var u: DoubleTensor
@@ -324,12 +283,12 @@ internal fun DoubleTensorAlgebra.svdHelper(
         if (n > m) {
             v = svd1d(a, epsilon)
             u = matrix.dot(v)
-            norm = DoubleTensorAlgebra { (u dot u).sqrt().value() }
+            norm = DoubleTensorAlgebra { sqrt((u dot u)).value() }
             u = u.times(1.0 / norm)
         } else {
             u = svd1d(a, epsilon)
-            v = matrix.transpose(0, 1).dot(u)
-            norm = DoubleTensorAlgebra { (v dot v).sqrt().value() }
+            v = matrix.transposed(0, 1).dot(u)
+            norm = DoubleTensorAlgebra { sqrt((v dot v)).value() }
             v = v.times(1.0 / norm)
         }
 
@@ -337,15 +296,15 @@ internal fun DoubleTensorAlgebra.svdHelper(
     }
 
     val s = res.map { it.first }.toDoubleArray()
-    val uBuffer = res.map { it.second }.flatMap { it.mutableBuffer.array().toList() }.toDoubleArray()
-    val vBuffer = res.map { it.third }.flatMap { it.mutableBuffer.array().toList() }.toDoubleArray()
+    val uBuffer = res.map { it.second.source }.concat()
+    val vBuffer = res.map { it.third.source }.concat()
     for (i in uBuffer.indices) {
-        matrixU.mutableBuffer.array()[matrixU.bufferStart + i] = uBuffer[i]
+        matrixU.source[i] = uBuffer[i]
     }
     for (i in s.indices) {
-        matrixS.mutableBuffer.array()[matrixS.bufferStart + i] = s[i]
+        matrixS.source[i] = s[i]
     }
     for (i in vBuffer.indices) {
-        matrixV.mutableBuffer.array()[matrixV.bufferStart + i] = vBuffer[i]
+        matrixV.source[i] = vBuffer[i]
     }
 }

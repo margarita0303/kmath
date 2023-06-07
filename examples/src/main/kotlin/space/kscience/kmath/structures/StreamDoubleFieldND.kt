@@ -1,10 +1,11 @@
 /*
- * Copyright 2018-2021 KMath contributors.
+ * Copyright 2018-2022 KMath contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
 package space.kscience.kmath.structures
 
+import space.kscience.kmath.PerformancePitfall
 import space.kscience.kmath.nd.*
 import space.kscience.kmath.operations.DoubleField
 import space.kscience.kmath.operations.ExtendedField
@@ -16,11 +17,11 @@ import java.util.stream.IntStream
  * A demonstration implementation of NDField over Real using Java [java.util.stream.DoubleStream] for parallel
  * execution.
  */
-class StreamDoubleFieldND(override val shape: IntArray) : FieldND<Double, DoubleField>,
+class StreamDoubleFieldND(override val shape: ShapeND) : FieldND<Double, DoubleField>,
     NumbersAddOps<StructureND<Double>>,
     ExtendedField<StructureND<Double>> {
 
-    private val strides = DefaultStrides(shape)
+    private val strides = ColumnStrides(shape)
     override val elementAlgebra: DoubleField get() = DoubleField
     override val zero: BufferND<Double> by lazy { structureND(shape) { zero } }
     override val one: BufferND<Double> by lazy { structureND(shape) { one } }
@@ -30,17 +31,19 @@ class StreamDoubleFieldND(override val shape: IntArray) : FieldND<Double, Double
         return structureND(shape) { d }
     }
 
+    @OptIn(PerformancePitfall::class)
     private val StructureND<Double>.buffer: DoubleBuffer
         get() = when {
             !shape.contentEquals(this@StreamDoubleFieldND.shape) -> throw ShapeMismatchException(
                 this@StreamDoubleFieldND.shape,
                 shape
             )
-            this is BufferND && this.indices == this@StreamDoubleFieldND.strides -> this.buffer as DoubleBuffer
+
+            this is BufferND && indices == this@StreamDoubleFieldND.strides -> this.buffer as DoubleBuffer
             else -> DoubleBuffer(strides.linearSize) { offset -> get(strides.index(offset)) }
         }
 
-    override fun structureND(shape: Shape, initializer: DoubleField.(IntArray) -> Double): BufferND<Double> {
+    override fun structureND(shape: ShapeND, initializer: DoubleField.(IntArray) -> Double): BufferND<Double> {
         val array = IntStream.range(0, strides.linearSize).parallel().mapToDouble { offset ->
             val index = strides.index(offset)
             DoubleField.initializer(index)
@@ -49,6 +52,7 @@ class StreamDoubleFieldND(override val shape: IntArray) : FieldND<Double, Double
         return BufferND(strides, array.asBuffer())
     }
 
+    @OptIn(PerformancePitfall::class)
     override fun StructureND<Double>.map(
         transform: DoubleField.(Double) -> Double,
     ): BufferND<Double> {
@@ -56,6 +60,7 @@ class StreamDoubleFieldND(override val shape: IntArray) : FieldND<Double, Double
         return BufferND(strides, array.asBuffer())
     }
 
+    @OptIn(PerformancePitfall::class)
     override fun StructureND<Double>.mapIndexed(
         transform: DoubleField.(index: IntArray, Double) -> Double,
     ): BufferND<Double> {
@@ -69,6 +74,7 @@ class StreamDoubleFieldND(override val shape: IntArray) : FieldND<Double, Double
         return BufferND(strides, array.asBuffer())
     }
 
+    @OptIn(PerformancePitfall::class)
     override fun zip(
         left: StructureND<Double>,
         right: StructureND<Double>,
@@ -105,4 +111,4 @@ class StreamDoubleFieldND(override val shape: IntArray) : FieldND<Double, Double
     override fun atanh(arg: StructureND<Double>): BufferND<Double> = arg.map { atanh(it) }
 }
 
-fun DoubleField.ndStreaming(vararg shape: Int): StreamDoubleFieldND = StreamDoubleFieldND(shape)
+fun DoubleField.ndStreaming(vararg shape: Int): StreamDoubleFieldND = StreamDoubleFieldND(ShapeND(shape))

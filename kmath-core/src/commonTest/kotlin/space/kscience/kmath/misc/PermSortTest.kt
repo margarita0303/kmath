@@ -1,10 +1,11 @@
 /*
- * Copyright 2018-2021 KMath contributors.
- * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+ * Copyright 2018-2022 KMath contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
 package space.kscience.kmath.misc
 
+import space.kscience.kmath.UnstableKMathAPI
 import space.kscience.kmath.misc.PermSortTest.Platform.*
 import space.kscience.kmath.structures.IntBuffer
 import space.kscience.kmath.structures.asBuffer
@@ -14,6 +15,7 @@ import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
+@OptIn(UnstableKMathAPI::class)
 class PermSortTest {
 
     private enum class Platform {

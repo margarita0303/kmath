@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 KMath contributors.
+ * Copyright 2018-2022 KMath contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
@@ -8,14 +8,14 @@ package space.kscience.kmath.operations
 import space.kscience.kmath.commons.linear.CMLinearSpace
 import space.kscience.kmath.linear.matrix
 import space.kscience.kmath.nd.DoubleBufferND
-import space.kscience.kmath.nd.Shape
+import space.kscience.kmath.nd.ShapeND
 import space.kscience.kmath.nd.Structure2D
 import space.kscience.kmath.nd.ndAlgebra
 import space.kscience.kmath.viktor.ViktorStructureND
 import space.kscience.kmath.viktor.viktorAlgebra
 
 fun main() {
-    val viktorStructure: ViktorStructureND = DoubleField.viktorAlgebra.structureND(Shape(2, 2)) { (i, j) ->
+    val viktorStructure: ViktorStructureND = DoubleField.viktorAlgebra.structureND(ShapeND(2, 2)) { (i, j) ->
         if (i == j) 2.0 else 0.0
     }
 

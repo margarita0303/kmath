@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 KMath contributors.
+ * Copyright 2018-2022 KMath contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
@@ -7,7 +7,7 @@ package space.kscience.kmath.samplers
 
 import space.kscience.kmath.chains.BlockingDoubleChain
 import space.kscience.kmath.chains.map
-import space.kscience.kmath.stat.RandomGenerator
+import space.kscience.kmath.random.RandomGenerator
 
 /**
  * Sampling from a Gaussian distribution with given mean and standard deviation.
@@ -21,7 +21,7 @@ import space.kscience.kmath.stat.RandomGenerator
 public class GaussianSampler(
     public val mean: Double,
     public val standardDeviation: Double,
-    private val normalized: NormalizedGaussianSampler = BoxMullerSampler
+    private val normalized: NormalizedGaussianSampler = BoxMullerSampler,
 ) : BlockingDoubleSampler {
 
     init {

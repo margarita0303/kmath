@@ -1,10 +1,7 @@
 plugins {
     `kotlin-dsl`
     `version-catalog`
-    alias(miptNpmLibs.plugins.kotlin.plugin.serialization)
 }
-
-java.targetCompatibility = JavaVersion.VERSION_11
 
 repositories {
     mavenLocal()
@@ -13,19 +10,25 @@ repositories {
     gradlePluginPortal()
 }
 
-val toolsVersion: String by extra
-val kotlinVersion = miptNpmLibs.versions.kotlin.asProvider().get()
-val benchmarksVersion = miptNpmLibs.versions.kotlinx.benchmark.get()
+val toolsVersion = spclibs.versions.tools.get()
+val kotlinVersion = spclibs.versions.kotlin.asProvider().get()
+val benchmarksVersion = spclibs.versions.kotlinx.benchmark.get()
 
 dependencies {
-    api("ru.mipt.npm:gradle-tools:$toolsVersion")
+    api("space.kscience:gradle-tools:$toolsVersion")
     //plugins form benchmarks
-    api("org.jetbrains.kotlinx:kotlinx-benchmark-plugin:$benchmarksVersion")
-    api("org.jetbrains.kotlin:kotlin-allopen:$kotlinVersion")
+    api("org.jetbrains.kotlinx:kotlinx-benchmark-plugin:0.4.7")
+    //api("org.jetbrains.kotlin:kotlin-allopen:$kotlinVersion")
     //to be used inside build-script only
-    implementation(miptNpmLibs.kotlinx.serialization.json)
+    //implementation(spclibs.kotlinx.serialization.json)
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.+")
 }
 
-kotlin.sourceSets.all {
-    languageSettings.optIn("kotlin.OptIn")
+kotlin{
+    jvmToolchain{
+        languageVersion.set(JavaLanguageVersion.of(11))
+    }
+    sourceSets.all {
+        languageSettings.optIn("kotlin.OptIn")
+    }
 }
